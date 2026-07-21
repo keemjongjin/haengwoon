@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Haengwoon — 디자인 시안 미리보기</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+      "Malgun Gothic", sans-serif;
+    background: #e9eaed;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+    transition: background .3s;
+  }
+  #app {
+    width: 100%;
+    max-width: 880px;
+    background: var(--bg);
+    color: var(--fg);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,.18);
+    transition: background .3s, color .3s;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; }
+  #logo { background: none; border: none; cursor: pointer; font-size: 22px; font-weight: 600; color: var(--fg); font-family: inherit; }
+  #suffix { font-size: 15px; font-weight: 400; color: var(--fg); }
+  .hnav { display: flex; align-items: center; gap: 20px; }
+  nav { display: flex; gap: 18px; font-size: 14px; }
+  nav span { color: var(--mut); cursor: pointer; }
+  nav span:hover { color: var(--fg); }
+  #tog { background: none; border: none; cursor: pointer; font-size: 17px; }
+  .hero { display: flex; align-items: center; justify-content: space-between; padding: 24px 32px 28px; border-bottom: .5px solid var(--line); }
+  .hero-txt { font-size: 24px; font-weight: 600; line-height: 1.45; }
+  .hero-txt .kw { color: var(--acc); }
+  .hero-right { display: flex; align-items: center; gap: 18px; }
+  .links { display: flex; flex-direction: column; gap: 8px; font-size: 13px; text-align: right; }
+  .links span { color: var(--mut); cursor: pointer; }
+  .links span:hover { color: var(--acc); }
+  .sect-title { font-size: 15px; font-weight: 600; padding: 24px 32px 4px; letter-spacing: .01em; }
+  .lock { font-size: 12px; font-weight: 400; color: var(--mut); margin-left: 8px; }
+  .tabs { display: flex; gap: 20px; padding: 10px 32px 0; font-size: 14px; border-bottom: .5px solid var(--line); }
+  .tabs span { cursor: pointer; padding-bottom: 8px; color: var(--mut); }
+  .tabs span.on { color: var(--fg); font-weight: 500; border-bottom: 2px solid var(--acc); }
+  .posts { padding: 4px 32px 28px; }
+  .post { padding: 20px 0; border-bottom: .5px solid var(--line); }
+  .post h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .post p { font-size: 14px; line-height: 1.6; color: var(--mut); margin-bottom: 12px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .post .meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--mut); }
+  .post .meta .cat { color: var(--acc); }
+  /* ===== Music : Podiums-style ===== */
+  .admin-bar { padding: 16px 32px 0; display: flex; justify-content: flex-end; }
+  .feat { display: flex; gap: 22px; padding: 8px 32px 12px; }
+  .feat-cover { width: 150px; height: 150px; border-radius: 14px; display: flex;
+    align-items: center; justify-content: center; font-size: 54px; flex: none; }
+  .feat-body { flex: 1; }
+  .feat-date { font-size: 12px; color: var(--mut); margin-bottom: 4px; }
+  .feat-body h4 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .feat-score { font-size: 32px; font-weight: 700; color: var(--acc); margin-bottom: 10px; }
+  .feat-score span { font-size: 15px; color: var(--mut); font-weight: 500; margin-left: 2px; }
+  .feat-body p { font-size: 14px; line-height: 1.6; color: var(--mut); margin-bottom: 14px; }
+  .wc { padding: 8px 32px 8px; }
+  .wc-cards { display: flex; align-items: stretch; gap: 16px; }
+  .album { flex: 1; background: var(--card); border: .5px solid var(--line);
+    border-radius: 18px; padding: 16px; cursor: pointer; transition: transform .15s, border-color .15s; }
+  .album:hover { transform: translateY(-4px); border-color: var(--acc); }
+  .cover { width: 100%; aspect-ratio: 1/1; border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; font-size: 44px; margin-bottom: 14px; }
+  .album h4 { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+  .album .artist { font-size: 13px; color: var(--mut); margin-bottom: 14px; }
+  .vs { align-self: center; font-size: 15px; font-weight: 700; color: var(--mut); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 9999px; font-size: 14px; font-weight: 600; padding: 11px 24px;
+    cursor: pointer; border: none; font-family: inherit; width: 100%; }
+  .pill-primary { background: var(--acc); color: var(--on-acc); }
+  .pill-ghost { background: transparent; color: var(--fg); border: 1.5px solid var(--line); }
+  .pill-sm { width: auto; padding: 8px 18px; font-size: 13px; }
+  .cta-row { display: flex; gap: 10px; padding: 16px 32px 4px; }
+  .lb { padding: 8px 32px 30px; }
+  .lb-row { display: flex; align-items: center; gap: 16px; background: var(--card);
+    border: .5px solid var(--line); border-radius: 14px; padding: 12px 18px; margin-bottom: 10px; }
+  .lb-rank { font-size: 20px; font-weight: 700; width: 30px; color: var(--acc); }
+  .lb-cover { width: 44px; height: 44px; border-radius: 8px; display: flex;
+    align-items: center; justify-content: center; font-size: 20px; flex: none; }
+  .lb-info { flex: 1; }
+  .lb-info .t { font-size: 15px; font-weight: 600; }
+  .lb-info .a { font-size: 12px; color: var(--mut); }
+  .lb-score { font-size: 17px; font-weight: 700; }
+  .lb-score span { font-size: 12px; color: var(--mut); font-weight: 500; margin-left: 1px; }
+  .hint { text-align: center; font-size: 12px; color: #8a8a8a; margin-top: 18px; }
+</style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <button id="logo">Haengwoon<span id="suffix">_tech</span></button>
+      <div class="hnav">
+        <nav id="nav"></nav>
+        <button id="tog" aria-label="테마 전환">🌙</button>
+      </div>
+    </header>
+
+    <div class="hero">
+      <div class="hero-txt">안녕하세요!<br><span class="kw" id="kw">Frontend</span>를 좋아하는 개발자 <span>jongjin</span>입니다.</div>
+      <div class="hero-right">
+        <div class="links" id="links"></div>
+        <svg id="cat" viewBox="0 0 130 120" width="88" height="80" style="flex:none;">
+          <polygon points="30,44 42,10 60,40" fill="#141414"/>
+          <polygon points="100,44 88,10 70,40" fill="#141414"/>
+          <polygon points="36,38 44,18 54,37" fill="#5b3b52"/>
+          <polygon points="94,38 86,18 76,37" fill="#5b3b52"/>
+          <ellipse cx="65" cy="70" rx="43" ry="39" fill="#141414"/>
+          <ellipse cx="50" cy="64" rx="9.5" ry="11.5" fill="#dff2b8"/>
+          <ellipse cx="80" cy="64" rx="9.5" ry="11.5" fill="#dff2b8"/>
+          <circle id="lp" cx="50" cy="64" r="4.6" fill="#111"/>
+          <circle id="rp" cx="80" cy="64" r="4.6" fill="#111"/>
+          <polygon points="65,80 61,76 69,76" fill="#e07a9c"/>
+          <path d="M65,80 Q65,86 59,86 M65,80 Q65,86 71,86" stroke="#333" stroke-width="1.2" fill="none"/>
+          <line x1="16" y1="66" x2="38" y2="68" stroke="#888" stroke-width="1"/>
+          <line x1="16" y1="74" x2="38" y2="74" stroke="#888" stroke-width="1"/>
+          <line x1="114" y1="66" x2="92" y2="68" stroke="#888" stroke-width="1"/>
+          <line x1="114" y1="74" x2="92" y2="74" stroke="#888" stroke-width="1"/>
+        </svg>
+      </div>
+    </div>
+
+    <div id="content"></div>
+    <div class="hint">로고 클릭 = Tech ↔ Music &nbsp;·&nbsp; 🌙 버튼 = Light ↔ Dark &nbsp;·&nbsp; Music에서 "관리자 로그인" 누르면 월드컵 노출</div>
+  </div>
+
+<script>
+  var P = {
+    'tech-light':  { bg:'#F7F8FA', fg:'#0F1010', mut:'#6b7280', line:'#e5e7eb', acc:'#0F1010', card:'#ffffff', onAcc:'#ffffff' },
+    'tech-dark':   { bg:'#0F1010', fg:'#F5F6F7', mut:'#9ca3af', line:'#27272a', acc:'#F5F6F7', card:'#181818', onAcc:'#0F1010' },
+    'music-light': { bg:'#F7F8FA', fg:'#0F1010', mut:'#6b7280', line:'#e5e7eb', acc:'#15803d', card:'#ffffff', onAcc:'#ffffff' },
+    'music-dark':  { bg:'#0a0a0a', fg:'#ededed', mut:'#8a8a8a', line:'#242424', acc:'#22C55E', card:'#161616', onAcc:'#08210f' }
+  };
+  var NAV = { tech:['Posts','Projects','About'], music:['Archive','Leaderboard','Insights'] };
+  var KW  = { tech:'Frontend', music:'Indie Rock' };
+  var TABS= { tech:['All','Dev','Experience','회고'], music:['All','Rock','Jazz','City Pop'] };
+  var POSTS = [
+    ['Terraform, 테라 폼 미쳤다','다들 테라 좋아하시나요? 서버 하나 띄우려고 AWS 콘솔에 접속했다가 이것저것 클릭한 결과, IaC의 세계에 빠지게 되었습니다.','2026.03.30','Dev'],
+    ['API가 안나왔다고요? 그렇다면 어댑터를 써보세요','Tanstack Query를 사용한다는 전제 하에 작성되었습니다. 서버와 프론트의 스키마를 동일하게 가져가야 한다고 생각하는 편인데…','2025.12.25','Dev'],
+    ['RIP Records & Tuples','JavaScript에는 여전히 Records도, Tuple도 없다. TC39는 진짜 Record & Tuple을 표준에 도입하려 했지만 결국…','2025.11.24','Dev']
+  ];
+  // [color, emoji, artist, title, elo, reviewDate, review]
+  var ALBUMS = [
+    ['#c026d3','🌫️','My Bloody Valentine','Loveless',1712,'2026.06.02','노이즈의 벽 너머에 멜로디가 숨어있다. 볼륨을 올릴수록 선명해지는 역설.'],
+    ['#dc2626','🌈','Radiohead','In Rainbows',1688,'2026.07.18','밴드가 가격을 팬에게 맡긴 실험작. 그런데 음악은 실험이 아니라 완성이었다.'],
+    ['#1d4ed8','🌀','Fishmans','空中キャンプ',1655,'2026.05.20','새벽 4시에만 열리는 문 같은 앨범. 사토 신지의 목소리가 공기처럼 번진다.'],
+    ['#0891b2','🌊','Tame Impala','Currents',1602,'2026.07.10','혼자 다 만든 사람의 고독이 신스 위에 얹혀있다. Let It Happen 한 곡으로 충분.']
+  ];
+  var mode='tech', theme='light', adminView=false;
+  var $ = function(s){ return document.querySelector(s); };
+
+  // Elo → 10점 만점, 소수점 1자리
+  function scoreOf(elo){ return Math.min(10, elo / 180).toFixed(1); }
+
+  function setVars(p){
+    var a=$('#app').style;
+    a.setProperty('--bg',p.bg); a.setProperty('--fg',p.fg); a.setProperty('--mut',p.mut);
+    a.setProperty('--line',p.line); a.setProperty('--acc',p.acc); a.setProperty('--card',p.card);
+    a.setProperty('--on-acc',p.onAcc);
+    document.body.style.background = (theme==='dark') ? '#050505' : '#e9eaed';
+  }
+  function techContent(){
+    var tabs = '<div class="tabs">'+TABS.tech.map(function(t,i){return '<span class="'+(i===0?'on':'')+'">'+t+'</span>';}).join('')+'</div>';
+    var posts = '<div class="posts">'+POSTS.map(function(r){
+      return '<div class="post"><h3>'+r[0]+'</h3><p>'+r[1]+'</p><div class="meta"><span>'+r[2]+'</span><span class="cat">'+r[3]+'</span></div></div>';
+    }).join('')+'</div>';
+    return tabs+posts;
+  }
+  function albumCard(x){
+    return '<div class="album"><div class="cover" style="background:'+x[0]+'33;color:'+x[0]+'">'+x[1]+'</div>'+
+      '<h4>'+x[2]+'</h4><div class="artist">'+x[3]+'</div>'+
+      '<button class="pill pill-primary">이 앨범 ▶</button></div>';
+  }
+  function musicContent(){
+    // 관리자 로그인 바
+    var adminBar = '<div class="admin-bar"><button class="pill pill-ghost pill-sm" id="adminBtn">'+
+      (adminView ? '🔓 관리자 모드 · 나만 보임' : '🔒 관리자 로그인') + '</button></div>';
+
+    // 가장 최근 리뷰 앨범 (첫 화면)
+    var recent = ALBUMS.slice().sort(function(a,b){return b[5].localeCompare(a[5]);})[0];
+    var featured = '<div class="sect-title">🎵 최근 리뷰</div>'+
+      '<div class="feat">'+
+        '<div class="feat-cover" style="background:'+recent[0]+'33;color:'+recent[0]+'">'+recent[1]+'</div>'+
+        '<div class="feat-body">'+
+          '<div class="feat-date">'+recent[5]+' 리뷰</div>'+
+          '<h4>'+recent[2]+' — '+recent[3]+'</h4>'+
+          '<div class="feat-score">'+scoreOf(recent[4])+'<span>/ 10</span></div>'+
+          '<p>'+recent[6]+'</p>'+
+          '<button class="pill pill-primary pill-sm">리뷰 전체 보기</button>'+
+        '</div>'+
+      '</div>';
+
+    // 앨범 월드컵 (관리자 전용)
+    var wc = '';
+    if(adminView){
+      wc = '<div class="sect-title">🎧 Album Worldcup <span class="lock">나만 볼 수 있음 (Spotify 재생)</span></div>'+
+        '<div class="wc"><div class="wc-cards">'+albumCard(ALBUMS[0])+'<div class="vs">VS</div>'+albumCard(ALBUMS[2])+'</div></div>'+
+        '<div class="cta-row"><button class="pill pill-ghost pill-sm">건너뛰기</button><button class="pill pill-ghost pill-sm">랜덤 매치</button></div>';
+    }
+
+    // 리더보드 (공개, 10점 만점)
+    var lb = '<div class="sect-title">🏆 Leaderboard</div><div class="lb">'+
+      ALBUMS.slice().sort(function(m,n){return n[4]-m[4];}).map(function(x,i){
+        return '<div class="lb-row"><div class="lb-rank">'+(i+1)+'</div>'+
+          '<div class="lb-cover" style="background:'+x[0]+'33;color:'+x[0]+'">'+x[1]+'</div>'+
+          '<div class="lb-info"><div class="t">'+x[2]+'</div><div class="a">'+x[3]+'</div></div>'+
+          '<div class="lb-score">'+scoreOf(x[4])+'<span>/10</span></div></div>';
+      }).join('')+'</div>';
+
+    return adminBar + featured + wc + lb;
+  }
+  function render(){
+    var p=P[mode+'-'+theme]; setVars(p);
+    $('#suffix').textContent = mode==='tech'?'_tech':'_music';
+    $('#kw').textContent = KW[mode];
+    $('#tog').textContent = theme==='light'?'🌙':'☀️';
+    $('#nav').innerHTML = NAV[mode].map(function(t){return '<span>'+t+'</span>';}).join('');
+    $('#links').innerHTML = ['github','resume','instagram'].map(function(t){return '<span>'+t+'</span>';}).join('');
+    $('#content').innerHTML = mode==='tech' ? techContent() : musicContent();
+    var ab=$('#adminBtn'); if(ab) ab.onclick=function(){ adminView=!adminView; render(); };
+  }
+  $('#logo').onclick = function(){ mode = mode==='tech'?'music':'tech'; render(); };
+  $('#tog').onclick  = function(){ theme = theme==='light'?'dark':'light'; render(); };
+
+  var cat=$('#cat'), lp=$('#lp'), rp=$('#rp');
+  function eye(px,py,cx,cy){
+    var r=cat.getBoundingClientRect();
+    var sx=r.left+(cx/130)*r.width, sy=r.top+(cy/120)*r.height;
+    var ang=Math.atan2(py-sy, px-sx);
+    return [cx+Math.cos(ang)*3.6, cy+Math.sin(ang)*4.2];
+  }
+  window.addEventListener('mousemove', function(e){
+    var l=eye(e.clientX,e.clientY,50,64), g=eye(e.clientX,e.clientY,80,64);
+    lp.setAttribute('cx',l[0]); lp.setAttribute('cy',l[1]);
+    rp.setAttribute('cx',g[0]); rp.setAttribute('cy',g[1]);
+  });
+  render();
+</script>
+</body>
+</html>

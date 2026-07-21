@@ -1,0 +1,35 @@
+---
+title: "Terraform, 테라 폼 미쳤다"
+description: "서버 하나 띄우려다 IaC(Infrastructure as Code)의 세계에 빠진 이야기."
+pubDate: "2026-03-30"
+category: "Dev"
+tags: ["terraform", "iac", "devops"]
+---
+
+## 시작은 사소했다
+
+서버 하나 띄우려고 AWS 콘솔에 접속했다가, 이것저것 클릭하는 내 모습이 싫어졌다.
+"이걸 코드로 관리할 수 없을까?" 그렇게 Terraform을 만났다.
+
+## Terraform이 뭔데
+
+인프라를 **선언적으로** 정의하는 도구다. 원하는 상태를 코드로 적으면, Terraform이 현재 상태와
+비교해서 필요한 것만 만들고 지운다.
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-12345678"
+  instance_type = "t3.micro"
+  tags = {
+    Name = "haengwoon-web"
+  }
+}
+```
+
+## 무엇이 좋았나
+
+- **재현 가능성**: 같은 코드로 언제든 같은 인프라를 만든다.
+- **리뷰 가능성**: 인프라 변경도 PR로 리뷰한다.
+- **협업**: 상태(state)를 공유하면 팀이 같은 그림을 본다.
+
+결국 클릭 몇 번을 아끼려다 인프라를 대하는 태도 자체가 바뀌었다.

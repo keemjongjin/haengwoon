@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+/*
+  4-테마 시스템: 모드(tech/music) × 테마(light/dark)
+  <html data-mode="tech|music" data-theme="light|dark"> 로 전환.
+  값 출처: DECISIONS.log #7 (레퍼런스 배경 실측 + Podiums/네온그린)
+*/
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-mut: var(--mut);
+  --color-line: var(--line);
+  --color-acc: var(--acc);
+  --color-card: var(--card);
+  --color-on-acc: var(--on-acc);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* 기본값 = Tech · Light */
+:root,
+[data-mode="tech"][data-theme="light"] {
+  --bg: #f7f8fa;
+  --fg: #0f1010;
+  --mut: #6b7280;
+  --line: #e5e7eb;
+  --acc: #0f1010;
+  --card: #ffffff;
+  --on-acc: #ffffff;
+}
+[data-mode="tech"][data-theme="dark"] {
+  --bg: #0f1010;
+  --fg: #f5f6f7;
+  --mut: #9ca3af;
+  --line: #27272a;
+  --acc: #f5f6f7;
+  --card: #181818;
+  --on-acc: #0f1010;
+}
+[data-mode="music"][data-theme="light"] {
+  --bg: #f7f8fa;
+  --fg: #0f1010;
+  --mut: #6b7280;
+  --line: #e5e7eb;
+  --acc: #15803d;
+  --card: #ffffff;
+  --on-acc: #ffffff;
+}
+[data-mode="music"][data-theme="dark"] {
+  --bg: #0a0a0a;
+  --fg: #ededed;
+  --mut: #8a8a8a;
+  --line: #242424;
+  --acc: #22c55e;
+  --card: #161616;
+  --on-acc: #08210f;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* MDX 본문 타이포그래피 */
+.article {
+  line-height: 1.8;
+}
+.article h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 2rem 0 0.75rem;
+  scroll-margin-top: 5rem;
+}
+.article h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+  scroll-margin-top: 5rem;
+}
+.article p {
+  margin: 1rem 0;
+}
+.article ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+  margin: 1rem 0;
+}
+.article li {
+  margin: 0.35rem 0;
+}
+.article a {
+  color: var(--acc);
+  text-decoration: underline;
+}
+.article :not(pre) > code {
+  background: var(--card);
+  border: 0.5px solid var(--line);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+  font-family: var(--font-mono), monospace;
+}
+.article pre {
+  background: var(--card);
+  border: 0.5px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.article pre code {
+  font-family: var(--font-mono), monospace;
+}
+
+/* rehype-pretty-code (shiki) 듀얼 테마 */
+.article [data-rehype-pretty-code-figure] {
+  margin: 1.25rem 0;
+}
+.article [data-rehype-pretty-code-figure] pre {
+  margin: 0;
+}
+.article pre span {
+  color: var(--shiki-light);
+}
+:root[data-theme="dark"] .article pre span {
+  color: var(--shiki-dark);
+}
