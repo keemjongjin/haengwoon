@@ -1,0 +1,261 @@
+# DECISIONS LOG — Two Worlds: Tech & Music Sync
+# 프로젝트 의사결정 기록. 최신 항목이 위로 쌓입니다.
+# 표기: [날짜] 카테고리 | 결정 | 근거
+
+========================================================================
+2026-07-21 | 초기 기획 방향 확정
+========================================================================
+
+[2026-07-21] DELIV | PLAN.md 작성 완료 = 기획 마무리. (스택·구조·DB스키마·핵심로직·13주 로드맵·env·열린항목)
+                   | 착수 전 남은 것: Last.fm↔Spotify ID 매칭(Epic3), 디자인 세부(나중), preview 레이아웃 반영(요청시).
+
+[2026-07-21] FEAT  | 아카이브 날짜 기준 토글 추가: "내 리뷰일 기준" ↔ "앨범 발매일 기준".
+                   | 기준에 따라 연도 칩·정렬·라벨이 바뀜. 시드에 실제 발매일 추가(releaseDate).
+                   | 검증: 브라우저(발매일 전환 시 연도 1991~2015로 변경, 발매일순 정렬).
+
+[2026-07-21] CHORE | GitHub 공개 준비.
+                   | .gitignore: .env.example 예외 추가(!.env.example) — 공개 저장소용 env 목록 유지.
+                   | README.md 총정리: 원 기획서 → v1.0 프로젝트 README(기능·스택·시작·구조·상태·문서링크).
+
+[2026-07-21] BUILD | ★Epic 6 준비완료 (마감·배포 readiness).
+                   | 최종 검증: vitest 8통과 + next build 성공(27페이지). DEPLOY.md 배포 가이드 작성.
+                   | ★배포 전 필수: repo→Drizzle 전환(인메모리는 서버리스에서 요청마다 초기화됨) +
+                   |   사용자 자격증명(Neon DATABASE_URL, Vercel, 선택 Spotify/Giscus).
+                   | 실제 배포·DB영속·Spotify실연동은 자격증명 확보 후 진행(코드/문서는 준비됨).
+
+[2026-07-21] BUILD | ★Epic 5 완료 (소셜·시각화 — 인메모리 repo 위).
+                   | repo 확장: comments/likes 저장소 + 메서드. lib/hash.ts(sha256), lib/spam.ts(허니팟·시간·레이트리밋·휴리스틱).
+                   | 댓글 API: /api/comments (GET·POST[스팸검사]·DELETE[비번]). 좋아요: /api/likes (GET·POST).
+                   | UI: AlbumComments(익명 폼+허니팟+삭제), LikeButton → 앨범 상세에 연결.
+                   | Insights: /music/insights — 평점 vs Elo 불일치 랭킹 + CSS 듀얼 바(차트 라이브러리 없이).
+                   | Archive: /music/archive — 연도/장르 필터(ArchiveFilters).
+                   | 검증: next build + API 직접호출(정상 댓글 200 / 허니팟·too-fast 429 차단 / 좋아요 count)
+                   |   + 브라우저(Insights 불일치 바, Archive 장르필터 Shoegaze→Loveless).
+
+[2026-07-21] BUILD | ★Epic 4 프론트 완료 (Music 프론트 — 인메모리 repo 위).
+                   | repo 확장: review 텍스트, tracks(+is_favorite), getAlbumWithTracks, toggleFavorite, recentReview.
+                   | /music 랜딩: 최근 리뷰 히어로(정면) → 스크롤 리더보드 미리보기. (랜딩페이지식)
+                   | /music/leaderboard: 두 탭(평점순/Elo순) 1년 필터. 두 탭 순위가 실제로 다르게 나옴(분리 확인).
+                   | /music/album/[id]: 두 점수(평점⟂Elo) + 리뷰 + 수록곡 🔥최애 토글 + mock 재생버튼.
+                   | 최애 토글 API: /api/tracks/favorite (admin). 비관리자는 401→UI 원복+안내.
+                   | 컴포넌트: Cover(색블록 커버), LeaderboardTabs, TrackList.
+                   | 검증: next build(26라우트) + dev 브라우저(랜딩·두탭·상세 확인).
+                   | Epic 4 잔여: Spotify 실 재생(SDK, 키 확보 시). 최애·평점입력은 완료.
+
+[2026-07-21] BUILD | ★Epic 3 뼈대 완료 (Music 코어 — DB 없이 mock/인메모리).
+                   | Elo 엔진: lib/elo.ts (expectedScore/updateElo/eloToScore10) + Vitest 8개 통과.
+                   | 관리자 인증: lib/auth.ts (jose JWT, ADMIN_KEY→쿠키). /api/auth (POST 로그인/DELETE 로그아웃).
+                   | 인메모리 저장소: lib/db/repo.ts (시드 4앨범, globalThis 유지). ★DB 연결 시 Drizzle로 교체.
+                   | Spotify mock 확장: searchAlbums/getAlbum (샘플 앨범+트랙).
+                   | API: /api/albums(GET 공개·POST 등록[admin]) /api/match(admin) /api/match/vote(admin) /api/backup(admin).
+                   | 관리자 UI: components/music/AdminPanel — 로그인→월드컵 투표→Elo 순위(평점·Elo 분리 표시).
+                   | 검증: vitest 8통과 + next build(24라우트, API 5개) + dev 브라우저 E2E
+                   |   (로그인 → 이변 투표 Loveless 1712→1691, Currents 1602→1623 정확 반영).
+                   | Epic 3 잔여(DB 연결 후): repo→Drizzle 교체, Spotify 실 client-credentials,
+                   |   수동 평점 입력 UI, /music/leaderboard·insights 프론트(Epic 4).
+
+[2026-07-21] BUILD | Epic 2 진행 (Tech 블로그) — 1차 마일스톤.
+                   | MDX 파이프라인: gray-matter + next-mdx-remote/rsc + reading-time + rehype-slug.
+                   | lib/posts.ts(프론트매터·읽는시간·TOC), lib/format.ts(날짜).
+                   | /posts: 발췌형 목록 + 카테고리 탭(PostList, client).
+                   | /posts/[slug]: MDX 본문 + TOC(github-slugger 앵커 일치) + 태그 + 읽는시간, SSG.
+                   | globals.css .article 타이포. Tech 홈에 Recent Posts. 샘플 글 3개.
+                   | 검증: next build 성공(17 라우트, 포스트 3개 SSG), tsc 통과.
+                   | Epic 2 잔여: Projects, 검색(Pagefind), RSS, 이력서 스크램블, 코드 하이라이트(shiki),
+                   |   Giscus(값 대기), 페이지네이션, About 콘텐츠.
+
+[2026-07-21] BUILD | Epic 2 2차 배치 — 브라우저 확인 후 추가 구현.
+                   | RSS: /rss.xml (동적). Projects: content/projects + lib/projects.ts +
+                   |   /projects 목록·[slug] 상세(SSG). 이력서 스크램블: ScrambleText 컴포넌트 + /resume.
+                   |   Giscus: Comments 컴포넌트(env-gated, 미설정 시 안내). 포스트 상세에 연결.
+                   | env 보강: NEXT_PUBLIC_SITE_URL, GISCUS_REPO_ID/CATEGORY_ID.
+                   | 검증: dev 브라우저 확인(projects/resume/rss/댓글안내) + next build 성공(19라우트).
+                   | .next 캐시 이슈: build→dev 전환 시 "Manifest empty" → rm -rf .next로 해결(운영 메모).
+                   | Epic 2 잔여(다음): Pagefind 검색, 코드 하이라이트(shiki), 페이지네이션, About 콘텐츠.
+
+[2026-07-21] BUILD | ★Epic 2 완료 (Tech 블로그) — 마지막 배치.
+                   | 코드 하이라이트: rehype-pretty-code + shiki, github-light/dark 듀얼 테마.
+                   |   lib/mdx.ts 공통 옵션(posts·projects 상세 공용). globals.css --shiki-light/dark 전환.
+                   | 검색: 빌드타임 인덱스(lib/search.ts) + 클라이언트 필터(SearchBox) + /search + 헤더 🔍.
+                   | 페이지네이션: PostList에 PAGE_SIZE=5 + 이전/다음(카테고리 전환 시 1p 리셋).
+                   | About: 자기소개 콘텐츠 작성.
+                   | 검증: next build 성공(19라우트) + dev 브라우저 확인(코드 색상·검색 동작).
+
+[2026-07-21] REVISE| 검색: PLAN의 Pagefind → 당장은 "빌드타임 인덱스 + 클라이언트 필터"로 구현.
+                   | 근거: Next(비-export) 앱에서 Pagefind는 빌드 산출물 마찰 큼. 콘텐츠 소량 단계엔
+                   |   클라이언트 검색이 단순·충분. 규모 커지면 Pagefind로 교체 가능(인터페이스는 /search 유지).
+
+[2026-07-21] BUILD | ★Epic 1 완료 (프로젝트 세팅) — 구현 착수.
+                   | 스캐폴드: Next.js 16.2 + React 19 + TS + Tailwind v4 (App Router, no src dir).
+                   | 4-테마 시스템: globals.css에 tech/music × light/dark 팔레트 + @theme 매핑.
+                   |   <html data-mode/data-theme>, ThemeScript(FOUC 방지), Header(로고=세계전환, 🌙 토글).
+                   | 라우팅 뼈대: /, /posts, /projects, /about, /resume, /search,
+                   |   /music, /music/{leaderboard,archive,insights,admin} (placeholder).
+                   | Footer: 소셜링크(github/resume/instagram) + 관리자 로그인 은밀 노출.
+                   | DB: Drizzle 스키마(albums/tracks/comments/matches/likes) + Neon 클라이언트,
+                   |   drizzle.config.ts, db:generate/push/studio 스크립트. 초기 마이그레이션 생성 검증 완료.
+                   | Spotify: lib/spotify.ts 어댑터+mock(키 없으면 mock). env: .env.example/.env.local.
+                   | 검증: tsc 통과, dev 서버 4테마 전환 브라우저 확인, drizzle generate 성공.
+                   | 미설정(값 대기): DATABASE_URL, LASTFM_API_KEY, Spotify/Giscus 키.
+
+## ✅ 확정된 결정 (Confirmed)
+
+[2026-07-21] ARCH  | 백엔드 방향: "B안 — Next.js 통합 서버리스" 채택
+                   | 근거: 유지비 최소화(scale-to-zero) + 단일 언어(TS) + 배포/운영 단순화.
+                   |       "정적(조회) + 서버리스(쓰기)" 구조로 유휴 시 비용 ≈ $0.
+
+[2026-07-21] ARCH  | 기각: "A안 — Astro + Spring Boot on Lambda"
+                   | 근거: Java/Spring 포트폴리오(특히 국내 취업) 가치는 있으나,
+                   |       비용/단순함 우선순위에 따라 B안 선택. Spring/JVM은 서버리스와
+                   |       궁합이 나쁨(콜드스타트, SnapStart 복잡도).
+
+[2026-07-21] STACK | 프레임워크: Next.js (App Router) + TypeScript
+                   | 근거: 프론트 + 서버리스 API를 한 배포로 통합, React 취업시장.
+
+[2026-07-21] STACK | 스타일: Tailwind CSS  (기획서 유지)
+
+[2026-07-21] STACK | ORM: Drizzle
+                   | 근거: 가볍고 SQL 친화적, Vercel 서버리스 콜드스타트에 유리.
+                   |       (대안 Prisma는 초보 친화적이나 미채택)
+
+[2026-07-21] STACK | DB: Neon Postgres (무료 티어, scale-to-zero)
+                   | 근거: 관계형 Album–Track 1:N 설계 유지 + 유휴 시 0으로 축소.
+
+[2026-07-21] STACK | 배포: Vercel (Hobby, 무료)
+                   | 근거: Next.js 네이티브 호스팅, 무설정·최저비용. (AWS 대비 단순)
+
+[2026-07-21] STACK | 인증: ADMIN_KEY 단일 패스워드 → JWT 발급 (기획서 6절 전략)
+[2026-07-21] STACK | Tech 콘텐츠: MDX 파일(레포 내). git push → 빌드 반영.
+[2026-07-21] STACK | Elo 엔진: Next.js API Route 내 TypeScript 구현 (+ Vitest 테스트)
+[2026-07-21] STACK | 메타데이터 수집: Last.fm API → 로컬 DB 영구 캐싱 (외부 API 우회)
+[2026-07-21] STACK | 음악 재생: Spotify Web Playback SDK (클라이언트, 프리미엄 토큰)
+
+[2026-07-21] DESIGN| 레퍼런스: https://www.jeong-min.com/ 를 "Tech 모드" 디자인 기준으로 채택
+                   | Music 모드 = 이를 어둡게·네온그린으로 뒤집은 쌍둥이 디자인.
+[2026-07-21] DESIGN| 미학 방향: 초미니멀·저용량(친환경 웹) 지향
+                   | 참고: stephango.com, Flexoki 색 팔레트(flexoki.com).
+                   | jeong-min.com 특징 = 여백 넉넉한 단일 컬럼 / 이모지 썸네일 포스트 목록 /
+                   |   카테고리 그룹화 / 다크모드 토글 / 타이핑 애니메이션 히어로.
+
+[2026-07-21] COST  | 운영 철학: scale-to-zero. 조회는 정적/캐시로, 쓰기(로그인/등록/투표/
+                   | 댓글·좋아요)만 서버리스 함수로. 유휴 시 실질 비용 $0 목표.
+
+[2026-07-21] FEAT  | 댓글: 하이브리드 방식 (모드별 분리) ★수정됨
+                   |   - 💻 Tech(블로그): Giscus (GitHub Discussions) — GitHub 로그인 댓글.
+                   |       근거: 기술 글 독자는 개발자층이라 GitHub 계정 진입장벽 낮음.
+                   |       DB·백엔드 0, 스팸 방어 자동, 마크다운 지원.
+                   |   - 🎵 Music: DB 기반 "게스트(익명) 댓글" (author_name+password).
+                   |       근거: 음악 방문자는 GitHub 없을 수 있음 → 진입장벽 제거.
+                   |       Elo용 Neon DB 재사용하므로 오버스펙 아님.
+                   | TODO(Music 전용): 스팸 방어(레이트리밋/간단 검증) 직접 구현.
+
+[2026-07-21] REF   | 옛날 기획 메모(~/Desktop/haengwoon/haengwoonpage/기획 메모장.txt) 참고 채택
+                   | 구조: 기능단위 컴포넌트(common/blog/project/music/resume/features) +
+                   |       콘텐츠 컬렉션(스키마 검증) + 레이아웃 분리 → Next.js App Router로 번역.
+                   | 도구 대응: Expressive Code→rehype-pretty-code/Shiki, Pagefind(그대로),
+                   |       Astro Content→Contentlayer/content-collections.
+
+[2026-07-21] REF   | 옛날 블로그 구현(~/Desktop/haengwoon/haengwoonpage/src/pages/blog/) 참고
+                   | 완성분: blog/[...slug].astro(글 상세) 1개만. 카테고리/페이지네이션은 빈 파일.
+                   | ▶ 채택: 검증된 blog 프론트매터 스키마 재사용
+                   |     title, description, pubDate, updatedDate?, heroImage?, category(필수), tags[]
+                   | ▶ 채택: 상세 렌더 패턴(히어로→날짜→제목→태그 pill→hr→prose dark:prose-invert)
+                   | ▶ project 스키마: title, description, pubDate, heroImage?, tags[]
+
+[2026-07-21] SCOPE | 음악(Music) = 과거 자산 폐기 후 신규 구축 (업그레이드)
+                   | 과거 music 컬렉션은 정적 마크다운 별점(title/artist/rating/date/cover)뿐.
+                   | 신규는 DB+Elo 월드컵+Last.fm 캐싱+Spotify 재생. → 과거 음악 파일 재사용 안 함.
+                   | 블로그/프로젝트 구조만 과거에서 계승.
+
+
+## 디자인 세부 — 진행 상황 (2026-07-21)
+
+[x] 1. 로고/블로그명: "Haengwoon" + 옆에 작게 접미사 "_tech" / "_music".
+       ★ 로고 클릭 = 모드 토글 (접미사가 _tech↔_music으로 바뀌며 Tech/Music 전환).
+       즉 로고 자체가 모드 스위치 역할.
+[~] 2. 히어로 문구: 이름/핸들 = "jongjin"(임시). 나머지 문구·구성은 레퍼런스 예제 그대로 보류.
+[x] 3. 다크모드 토글: 있음(유지).
+[x] 4. 우측 세로 링크: github / resume / instagram 로 확정.
+[~] 5. 아바타: 검정 고양이. 눈동자가 마우스를 따라오는 인터랙션.
+       현재 임시 시안(SVG) 제작됨 → 최종 디테일은 추후 다듬기.
+[x] 6. 블로그 목록: /posts/ 스타일 채택 = 카테고리 필터 탭 + 제목 + 발췌(2줄) + 날짜·카테고리.
+       (홈의 이모지 목록과 구분: 목록 페이지는 발췌형)
+[x] 7. 색상 & 테마: 레퍼런스 배경 채택.
+       - 밝은 배경 #F7F8FA / 텍스트 #0F1010 (실측). 다크는 짝 맞춰 지정(#0F1010 등).
+       - Music 포인트 네온그린: 다크에서 #22C55E, 라이트에서 #15803d(대비 확보).
+       - (참고: 레퍼런스 폰트 GmarketSansMedium — 채택 여부 미정)
+
+[x] 8. 테마 매트릭스 ★수정: 모드(Tech/Music) × 테마(Light/Dark) = 4조합 모두 독립.
+       (이전의 "Music=항상 다크" 가정 폐기. 뮤직도 화이트모드 지원.)
+       로고 클릭=Tech↔Music, 별도 토글=Light↔Dark.
+
+[x] 9. Music UI 언어: Podiums(podiu.ms) 디자인 참고 채택.
+       - Podiums DNA: 검정 배경 + 굵은 타이포 + 완전 둥근 pill 버튼(흰 채움/고스트) + 라운드 카드.
+       - 우리 적용: Music 쪽 버튼=pill(border-radius 9999px), 앨범/리더보드=라운드 카드(16~18px),
+         포인트는 네온그린 유지. Tech 쪽은 jeong-min 미니멀 그대로(일관성 유지).
+       - 월드컵 매치업 카드, 투표 pill 버튼, 리더보드 카드에 반영.
+
+[2026-07-21] DELIV | 로컬 디자인 시안 파일 생성: design-preview.html (단일 HTML, 외부 의존성 0)
+                   | 4조합 테마 + 로고 토글 + 고양이 아바타 + Tech 블로그목록 + Music Podiums UI 포함.
+                   | 여는 법: `open design-preview.html` 또는 더블클릭. README에 안내 추가.
+                   | ※ 디자인 확인용 정적 시안. 실서비스는 Next.js로 구현 예정.
+
+[2026-07-21] FEAT  | 리더보드 점수 표기: 내부 Elo → 화면엔 "10점 만점, 소수점 1자리"로 환산.
+                   | 시안 환산식(임시): min(10, elo/180).toFixed(1). 실제 식은 구현 시 확정.
+                   | 최근 리뷰 카드도 동일 표기(예: 9.4 / 10).
+
+[2026-07-21] DESIGN| 로고 접미사 색: "_music"은 accent(초록) 아닌 "Haengwoon"과 동일색(fg)으로.
+                   | (모든 모드에서 접미사 = fg. 히어로 강조 키워드만 accent 유지.)
+
+[2026-07-21] UX    | Music 첫 화면 = "가장 최근 리뷰한 앨범"을 대표로 노출(최근 리뷰 → 리더보드 순).
+                   | 근거: README 3.2 "첫 페이지 = 내가 최근 남긴 음악 기록".
+
+[2026-07-21] SCOPE | 앨범 월드컵 = 관리자(나) 전용. ★중요
+                   | 방문자에겐 월드컵/투표 UI 미노출. 방문자는 리더보드·아카이브·인사이트만 조회.
+                   | 근거: 월드컵 투표는 내 취향 큐레이션 활동이고 내 Spotify 프리미엄 토큰으로 재생.
+                   | → 인증(ADMIN_KEY→JWT) 통과 시에만 월드컵 라우트/UI 접근.
+
+[2026-07-21] REVISE| ★음악 메타데이터: Last.fm → Spotify Web API 로 변경.
+                   | 근거: 사용자는 계속 Spotify로 앨범정보를 상정했음. Last.fm은 원 기획서 잔재였음.
+                   | 수집도 Spotify(client credentials)로 통일 → 재생과 동일 소스.
+                   | ★부수효과: "Last.fm↔Spotify ID 매칭" 미지수 소멸(ID 단일화). 열린 항목에서 제거.
+                   | 반영: PLAN.md(§2,§3,§6,§7,§8), .env(LASTFM 제거), schema(lastfm_id 컬럼 제거), README 노트.
+
+[2026-07-21] TECH  | Spotify: 키 미보유 → "있다고 가정" 개발. 어댑터+목(mock) 패턴.
+                   | env(SPOTIFY_CLIENT_ID/SECRET/REFRESH_TOKEN)로만 참조. 키 없으면 mock,
+                   | 있으면 실제 호출. 재생 버튼은 미연결 시 비활성. 나중에 env만 채우면 됨(코드 0수정).
+                   | 관리자 1인 OAuth만 필요(월드컵 관리자 전용이므로).
+
+[2026-07-21] FEAT  | 스팸방어(Music 익명 댓글) 계층 방어 채택(전부 무료·서버리스 친화):
+                   | ① 허니팟 ② 제출시간 체크(2~3초) ③ 레이트리밋(DB 슬라이딩윈도우/Upstash 무료)
+                   | ④ 콘텐츠 휴리스틱(링크수·금지어·길이) ⑤ 관리자 삭제/숨김.
+                   | 에스컬레이션: ⑥ Cloudflare Turnstile(무료)는 실제 스팸 발생 시에만 도입.
+
+[2026-07-21] FEAT  | 평점 이중 시스템 채택. ★핵심 로직  [아래 REVISE로 방향 수정됨]
+                   | 앨범당 신호 2개: manual_rating(내가 지정, 화면 표시=공식) + elo_rating(월드컵 산출).
+                   | (초안) Elo가 manual을 "수정 제안(수락/거부)"하는 방식 검토했었음.
+
+[2026-07-21] REVISE| ★평점/Elo = 완전 분리 유지 (사용자 방향). 서로 덮어쓰지 않음.
+                   | 근거: 평점=절대적 내 점수 / Elo=상대적 대결 선호 → 다른 지표라 분리가 정확.
+                   | - 리더보드 = 두 탭: "평점 랭킹"(manual순) ↔ "취향 대결 랭킹"(Elo순).
+                   | - 앨범 상세엔 둘 다 표기.
+                   | - 이전의 "수정 제안(수락/거부 편집기)" → 강등: /music/insights의 지표로
+                   |   ("평점과 Elo가 가장 다른 앨범 TOP5" 등). 강제 편집 X, 발견의 재미로.
+                   | ✅ 확정(2026-07-21): 두 탭 OK / 제안기능 Insights 강등 OK / 레이아웃은 기록만(디자인 나중).
+
+[2026-07-21] UX    | 레이아웃 변경(디자인 반영은 나중):
+                   | - 관리자 로그인 → footer로 (눈에 안 띄게).
+                   | - github/resume/instagram 바로가기 → footer로 (히어로에서 내림).
+                   | - Music 기본화면 = 랜딩페이지식: 최근 리뷰 정면 크게 → 스크롤 시 리더보드.
+                   | - 리더보드 = 1년(최근 12개월) 기준.
+                   | - 아카이브(추후) = 전체 / 연도별 / 장르별 필터.
+
+    범례: [x] 확정  [~] 임시/부분  [ ] 대기 확정
+[x] 7. 댓글 = 하이브리드 확정: Tech→Giscus / Music→DB 익명 (2026-07-21) ✅
+
+## ✅ 추가 기능 (옛날 메모 참고) — 전부 채택 확정 (2026-07-21)
+[x] 검색(Pagefind) / TOC / RSS / 읽는시간 / 이력서 스크램블 텍스트 / 데이터 백업 API
+
+
+## 📌 확정 스택 요약 (한 줄)
+Next.js(App Router) + TypeScript + Tailwind + Drizzle + Neon Postgres + Vercel

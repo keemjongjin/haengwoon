@@ -1,0 +1,32 @@
+---
+title: "API가 안 나왔다고요? 그렇다면 어댑터를 써보세요"
+description: "서버와 프론트의 스키마가 어긋날 때, 어댑터 패턴으로 경계를 지키는 법."
+pubDate: "2025-12-25"
+category: "Dev"
+tags: ["design-pattern", "frontend", "typescript"]
+---
+
+## 문제 상황
+
+Tanstack Query를 쓴다는 전제로 이야기한다. 서버 응답과 화면이 원하는 모양이
+자주 어긋난다. 백엔드는 백엔드의 사정이 있고, 프론트는 프론트의 사정이 있다.
+
+## 어댑터로 경계 만들기
+
+API 응답을 화면 모델로 **변환하는 함수**를 한 겹 둔다.
+
+```ts
+type ApiAlbum = { album_title: string; artist_name: string };
+type Album = { title: string; artist: string };
+
+function toAlbum(api: ApiAlbum): Album {
+  return { title: api.album_title, artist: api.artist_name };
+}
+```
+
+## 무엇을 얻나
+
+- 서버 스키마가 바뀌어도 **어댑터 한 곳만** 고치면 된다.
+- 화면 코드는 깔끔한 도메인 모델만 안다.
+
+경계를 명확히 하는 것만으로 유지보수가 훨씬 편해진다.
