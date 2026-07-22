@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from "react";
 
-// Tech 블로그 댓글 = Giscus. 환경변수 미설정 시 안내 표시(값은 나중에 연결).
-export function Comments() {
+// Giscus(GitHub Discussions) 위젯. term이 있으면 모든 방문자가 같은 스레드에 모이는
+// "고정 매핑"(방명록용) — 없으면 현재 경로별 매핑(글 댓글용).
+export function Comments({ term }: { term?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   const repo = process.env.NEXT_PUBLIC_GISCUS_REPO;
@@ -23,16 +24,20 @@ export function Comments() {
     s.setAttribute("data-repo-id", repoId!);
     s.setAttribute("data-category", category!);
     s.setAttribute("data-category-id", categoryId!);
-    s.setAttribute("data-mapping", "pathname");
+    if (term) {
+      s.setAttribute("data-mapping", "specific");
+      s.setAttribute("data-term", term);
+    } else {
+      s.setAttribute("data-mapping", "pathname");
+    }
     s.setAttribute("data-reactions-enabled", "1");
     s.setAttribute("data-theme", theme);
     s.setAttribute("data-lang", "ko");
     ref.current.appendChild(s);
-  }, [configured, repo, repoId, category, categoryId]);
+  }, [configured, repo, repoId, category, categoryId, term]);
 
   return (
-    <section className="mt-16 border-t border-line pt-8">
-      <h2 className="mb-4 text-sm font-medium text-mut">댓글</h2>
+    <>
       {configured ? (
         <div ref={ref} />
       ) : (
@@ -40,6 +45,6 @@ export function Comments() {
           💬 댓글(Giscus)은 GitHub Discussions 설정 후 활성화됩니다.
         </p>
       )}
-    </section>
+    </>
   );
 }

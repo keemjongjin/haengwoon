@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
   const { trackId } = await req.json().catch(() => ({}));
-  const track = repo.toggleFavorite(Number(trackId));
+  const track = await repo.toggleFavorite(Number(trackId));
   if (!track) {
     return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
   }

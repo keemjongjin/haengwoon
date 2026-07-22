@@ -8,7 +8,7 @@
 ## ✨ 주요 기능
 
 ### 💻 Tech 모드 (`/`)
-- 마크다운(MDX) 기반 기술 블로그 — `git push`로 글 반영
+- 블로그 글은 **MDX 파일**(`content/posts/`) + `git push`로 발행 — 버전관리 공짜, 에디터로 바로 작성
 - 발췌형 목록 + 카테고리 탭 + 페이지네이션
 - 글 상세: 목차(ToC) · 읽는 시간 · 태그 · **코드 문법 강조**(shiki 라이트/다크)
 - 전문 검색 · RSS 피드 · 이력서(스크램블 디코딩 효과)
@@ -27,6 +27,13 @@
 - **4 테마**: 모드(Tech/Music) × 라이트/다크 독립 전환
 - 관리자 인증: 단일 `ADMIN_KEY` → JWT (footer에 은밀히)
 
+### 🔒 통합 관리자 (`/admin`)
+- **Overview**: 글·앨범·댓글·방문자 통계, 최근 활동, Spotify 연결 상태 체크, 빠른 링크(Neon 콘솔·백업)
+- **Posts**: 글 목록 확인 + 프론트매터 템플릿 안내 (작성 자체는 로컬에서 파일로 → git push)
+- **Music**: Spotify 검색으로 앨범 등록, 평점 입력, 앨범 월드컵
+- **Comments**: 전체 댓글 모아보기 + 숨김/삭제
+- 방문자 카운터는 외부 서비스 없이 자체 DB 집계
+
 ---
 
 ## 🛠 기술 스택
@@ -34,8 +41,8 @@
 |---|---|
 | 프레임워크 | Next.js 16 (App Router) · React 19 · TypeScript |
 | 스타일 | Tailwind CSS v4 |
-| 콘텐츠 | MDX (`next-mdx-remote`, `rehype-pretty-code`) |
-| DB / ORM | Neon (PostgreSQL) · Drizzle *(연결 시)* |
+| 콘텐츠 | 블로그·프로젝트 모두 MDX 파일 (`next-mdx-remote`, `rehype-pretty-code`) |
+| DB / ORM | Neon (PostgreSQL) · Drizzle |
 | 인증 | `jose` (JWT) |
 | 음악 | Spotify Web API + Playback SDK *(키 확보 시, 없으면 mock)* |
 | 테스트 | Vitest |
@@ -55,27 +62,29 @@ npm run build    # 프로덕션 빌드
 ```
 
 - 개발 서버는 `http://localhost:3000`
-- 관리자 페이지 `/music/admin` — 개발 기본 키: `dev-admin-key`
+- 통합 관리자 페이지 `/admin` — 개발 기본 키: `dev-admin-key`
 
 ---
 
 ## 📁 프로젝트 구조
 ```
-app/                # 라우트 (Tech / Music / api)
-  posts/ projects/ resume/ search/      # Tech
-  music/ (leaderboard·archive·insights·admin·album/[id])   # Music
-  api/  (auth·albums·match·comments·likes·backup·tracks)
-components/  common/ blog/ music/ resume/ features/
-content/     posts/*.mdx  projects/*.mdx
-lib/         elo · auth · spam · hash · spotify · mdx · db(repo·schema)
+app/                # 라우트
+  posts/ projects/ resume/ search/                 # Tech
+  music/ (leaderboard·archive·insights·album/[id])  # Music
+  admin/ (posts[읽기전용]·music·comments)            # 🔒 통합 관리자
+  api/   (albums·match·comments·likes·spotify·admin·track·backup)
+components/  common/ blog/ music/ resume/ features/ admin/
+content/     posts/*.mdx  projects/*.mdx    # 블로그·프로젝트 모두 파일 (git push로 발행)
+lib/         elo · auth · spam · hash · spotify · mdx · posts · db(repo·schema)
 ```
 
 ---
 
 ## 📦 상태 (v1.0)
-- **Epic 1~5 구현 완료**, Epic 6 배포 준비 완료.
-- ⚠️ 데이터 계층은 현재 **개발용 인메모리 repo**(`lib/db/repo.ts`)로 동작합니다.
-  Vercel 서버리스 배포 시엔 요청마다 초기화되므로, **배포 전 `repo → Drizzle` 전환 + Neon 연결이 필요**합니다.
+- **Epic 1~5 구현 완료 + Neon DB 연결 완료 + 통합 관리자(/admin) 구현 완료.**
+  음악 데이터는 Drizzle + Neon 기반으로 동작하며, 서버 재시작·재배포에도 유지됩니다.
+- 블로그(Posts)는 **MDX 파일 + git push** 방식 — 로컬 에디터로 쓰고 버전관리도 공짜로 따라옵니다.
+- 남은 것: Vercel 실배포, Spotify/Giscus 실 키 연결. 자세한 절차는 [`DEPLOY.md`](./DEPLOY.md) 참고.
 
 ---
 

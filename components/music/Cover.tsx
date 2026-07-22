@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 // 앨범 커버 플레이스홀더 (실제 coverImageUrl 있으면 그걸 사용, 없으면 색블록).
 const HUES = ["#c026d3", "#dc2626", "#1d4ed8", "#0891b2", "#7c3aed", "#ea580c"];
 
@@ -14,9 +16,8 @@ export function Cover({
 }) {
   const hue = HUES[id % HUES.length];
   if (url) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
-      <img
+      <Image
         src={url}
         alt={title}
         width={size}

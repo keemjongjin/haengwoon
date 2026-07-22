@@ -20,7 +20,7 @@
 | ORM / DB | **Drizzle** / **Neon Postgres** (관계형, scale-to-zero) |
 | 배포 | **Vercel** (Hobby, 무료) |
 | 인증 | `ADMIN_KEY` 단일 패스워드 → JWT |
-| Tech 콘텐츠 | MDX 파일 (레포 내, `git push` 반영) |
+| Tech 콘텐츠 | **MDX 파일** (레포 내, `git push` 반영) — DB CRUD로 전환했다가 다시 되돌림(아래 참고) |
 | 음악 메타 | **Spotify Web API** 수집 → 로컬 DB 영구 캐싱 |
 | 음악 재생 | Spotify Web Playback SDK (관리자 전용, **키 없으면 mock**) |
 
@@ -33,35 +33,44 @@
 
 ```
 app/
-  layout.tsx                 # 헤더(로고 토글·nav·다크토글) + footer(관리자 로그인·소셜링크)
-  page.tsx                   # 💻 Tech 홈 (/)
+  layout.tsx                 # 헤더(로고 토글·nav·다크토글) + footer(관리자 링크·소셜링크) + VisitorPing
+  page.tsx                   # 💻 Tech 홈 (/) — 최근 글 (MDX 파일, SSG)
   posts/
-    page.tsx                 # 발췌형 목록 + 카테고리 탭 + 페이지네이션
-    [slug]/page.tsx          # 글 상세 (TOC)
+    page.tsx                 # 발췌형 목록 + 카테고리 탭 + 페이지네이션 (MDX, 정적)
+    [slug]/page.tsx          # 글 상세 (TOC, SSG generateStaticParams)
   projects/
-    page.tsx  [slug]/page.tsx
-  category/[category]/[page]/page.tsx
+    page.tsx  [slug]/page.tsx  # 프로젝트도 MDX 파일(정적)
   resume/page.tsx            # 스크램블 텍스트 효과
-  search/page.tsx            # Pagefind
+  search/page.tsx            # 클라이언트 검색 (MDX 파일 기반 인덱스, 정적)
   music/
     page.tsx                 # 랜딩: 최근 리뷰 히어로 → 스크롤 시 리더보드(1년)
     leaderboard/page.tsx     # 두 탭: 평점순 / 취향대결(Elo)순
-    archive/page.tsx         # 전체 / 연도별 / 장르별 필터  (추후 강화)
-    insights/page.tsx        # Chart + "평점 vs Elo 불일치" 지표
-    admin/page.tsx           # 🔒 월드컵 · 앨범등록 · 평점입력 (인증 필요)
+    archive/page.tsx         # 리뷰일/발매일 기준 전환 + 연도·장르 필터
+    insights/page.tsx        # 평점 vs Elo 불일치 시각화
+    album/[id]/page.tsx      # 앨범 상세: 두 점수·Spotify 임베드·최애·댓글·좋아요
+    admin/page.tsx           # 구 경로 — /admin/music 으로 redirect
+  admin/                     # 🔒 통합 관리자 (AdminGate로 보호)
+    layout.tsx  page.tsx(Overview)
+    posts/page.tsx            # 읽기전용: 글 목록 + 프론트매터 템플릿 안내 (CRUD 없음, git push로 작성)
+    music/page.tsx            # 월드컵·검색등록·평점입력
+    comments/page.tsx         # 댓글 모더레이션
   api/
-    auth/route.ts            # ADMIN_KEY → JWT
-    albums/route.ts          # Spotify 수집·등록 / 목록 조회
-    match/route.ts           # 매치업 2개 추출 (관리자)
-    match/vote/route.ts      # 투표 → Elo 재계산 (관리자)
-    comments/route.ts        # 익명 댓글 CRUD (+스팸방어)
-    likes/route.ts           # 좋아요
-    backup/route.ts          # 전체 데이터 JSON 덤프
+    auth/route.ts            # GET(상태) · POST(로그인) · DELETE(로그아웃)
+    albums/route.ts  albums/[id]/rating/route.ts
+    match/route.ts  match/vote/route.ts
+    comments/route.ts  likes/route.ts  tracks/favorite/route.ts
+    spotify/authorize  spotify/callback  spotify/search
+    admin/stats  admin/spotify-status  admin/comments  admin/comments/[id]
+    track/route.ts           # 방문자 기록 (공개)
+    backup/route.ts          # 음악 데이터만(블로그는 git이 백업)
   rss.xml/route.ts
-content/  posts/*.mdx  projects/*.mdx
-components/  common/  blog/  project/  music/  resume/  features/
-lib/  db/(schema,client)  elo.ts  lastfm.ts  spotify.ts(어댑터+mock)  rating.ts  spam.ts  utils/
+content/  posts/*.mdx  projects/*.mdx     # 블로그·프로젝트 모두 파일 (git push로 발행)
+components/  common/  blog/  project/  music/  resume/  features/  admin/
+lib/  db/(schema,repo,client)  posts.ts(fs+gray-matter)  elo.ts  spotify.ts  auth.ts  spam.ts  hash.ts  search.ts
 ```
+
+> ★ 블로그는 한때 DB(posts 테이블) CRUD로 전환했다가, 개발자 워크플로우(에디터+git)에 더 맞는다는
+> 판단으로 **MDX 파일 방식으로 되돌림**. 상세 근거는 DECISIONS.log 참고.
 
 ---
 

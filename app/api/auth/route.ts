@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { checkAdminKey, issueToken, AUTH_COOKIE } from "@/lib/auth";
+import { checkAdminKey, issueToken, isAdmin, AUTH_COOKIE } from "@/lib/auth";
+
+// GET /api/auth → 현재 관리자 인증 여부 확인 (AdminGate에서 사용)
+export async function GET() {
+  return NextResponse.json({ authed: await isAdmin() });
+}
 
 // POST /api/auth  { key }  → 성공 시 관리자 JWT 쿠키 발급
 export async function POST(req: Request) {

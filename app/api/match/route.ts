@@ -7,7 +7,7 @@ export async function GET() {
   if (!(await isAdmin())) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
-  const pair = repo.getMatchup();
+  const pair = await repo.getMatchup();
   if (!pair) {
     return NextResponse.json({ ok: false, error: "not enough albums" }, { status: 400 });
   }

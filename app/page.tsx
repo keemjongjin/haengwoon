@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { getAllPosts } from "@/lib/posts";
+import { getVisiblePosts } from "@/lib/posts";
 import { formatDate } from "@/lib/format";
 
-export default function TechHome() {
-  const recent = getAllPosts().slice(0, 5);
+export const dynamic = "force-dynamic"; // 숨김 여부는 DB 조회 → 매 요청 최신화
+
+export default async function TechHome() {
+  const recent = (await getVisiblePosts()).slice(0, 5);
 
   return (
     <div>

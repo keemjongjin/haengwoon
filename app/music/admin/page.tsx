@@ -1,12 +1,6 @@
-import { AdminPanel } from "@/components/music/AdminPanel";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Admin — Haengwoon" };
-
-export default function AdminPage() {
-  return (
-    <div>
-      <h1 className="mb-6 text-2xl font-semibold">🔒 Admin</h1>
-      <AdminPanel />
-    </div>
-  );
+// 구 경로 호환: 통합 관리자 페이지로 이동.
+export default function LegacyMusicAdminPage() {
+  redirect("/admin/music");
 }

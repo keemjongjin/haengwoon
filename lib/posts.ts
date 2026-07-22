@@ -3,6 +3,7 @@ import path from "node:path";
 import matter from "gray-matter";
 import readingTime from "reading-time";
 import GithubSlugger from "github-slugger";
+import { repo } from "@/lib/db/repo";
 
 const POSTS_DIR = path.join(process.cwd(), "content", "posts");
 
@@ -54,6 +55,12 @@ export function getAllPosts(): PostMeta[] {
   return getAllPostSlugs()
     .map(toMeta)
     .sort((a, b) => (a.pubDate < b.pubDate ? 1 : -1));
+}
+
+// 공개 노출용 — 관리자가 숨긴 글(post_visibility)은 제외. 콘텐츠 자체는 여전히 git이 원본.
+export async function getVisiblePosts(): Promise<PostMeta[]> {
+  const hidden = await repo.getHiddenSlugs();
+  return getAllPosts().filter((p) => !hidden.has(p.slug));
 }
 
 export function getCategories(): string[] {

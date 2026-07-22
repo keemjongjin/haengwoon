@@ -9,7 +9,7 @@ export default function ProjectsPage() {
   return (
     <div>
       <h1 className="mb-6 text-2xl font-semibold">Projects</h1>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="flex flex-col gap-4">
         {projects.map((p) => (
           <Link
             key={p.slug}
@@ -17,7 +17,7 @@ export default function ProjectsPage() {
             className="block rounded-xl border border-line bg-card p-5 transition-colors hover:border-acc"
           >
             <h2 className="font-semibold">{p.title}</h2>
-            <p className="mt-2 line-clamp-2 text-sm text-mut">{p.description}</p>
+            <p className="mt-2 text-sm text-mut">{p.description}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {p.tags.map((t) => (
                 <span key={t} className="text-xs text-acc">

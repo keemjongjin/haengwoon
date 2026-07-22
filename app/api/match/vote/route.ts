@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
   const { winnerId, loserId } = await req.json().catch(() => ({}));
-  const result = repo.vote(Number(winnerId), Number(loserId));
+  const result = await repo.vote(Number(winnerId), Number(loserId));
   if (!result) {
     return NextResponse.json({ ok: false, error: "invalid vote" }, { status: 400 });
   }

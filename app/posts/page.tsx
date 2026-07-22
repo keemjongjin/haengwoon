@@ -1,10 +1,11 @@
-import { getAllPosts, getCategories } from "@/lib/posts";
+import { getVisiblePosts, getCategories } from "@/lib/posts";
 import { PostList } from "@/components/blog/PostList";
 
 export const metadata = { title: "Posts — Haengwoon" };
+export const dynamic = "force-dynamic"; // 숨김 여부는 DB 조회 → 매 요청 최신화
 
-export default function PostsPage() {
-  const posts = getAllPosts();
+export default async function PostsPage() {
+  const posts = await getVisiblePosts();
   const categories = getCategories();
 
   return (
