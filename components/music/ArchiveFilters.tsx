@@ -1,33 +1,45 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Cover } from "./Cover";
+import { useEffect, useMemo, useState } from "react";
+import { AlbumRatingCard } from "./AlbumRatingCard";
 
 export type ArchiveAlbum = {
   id: number;
+  spotifyAlbumId?: string | null;
   title: string;
   artist: string;
   coverImageUrl: string | null;
+  albumType?: string | null;
   genre: string | null;
   reviewDate: string | null;
   releaseDate: string | null;
   manualRating: number | null;
+  review?: string | null;
+  likeCount?: number;
+  favoriteTrack?: { id: number; title: string; previewUrl?: string | null; manualRating?: number | null } | null;
 };
 
-type Basis = "review" | "release";
+type Basis = "review" | "release" | "rating" | "likes";
+const PAGE_SIZE = 10;
 
 function yearOf(d: string | null): string {
   return d ? d.slice(0, 4) : "?";
 }
 
-export function ArchiveFilters({ albums }: { albums: ArchiveAlbum[] }) {
+export function ArchiveFilters({
+  albums,
+  initialGenre,
+}: {
+  albums: ArchiveAlbum[];
+  initialGenre?: string;
+}) {
   const [basis, setBasis] = useState<Basis>("review");
   const [year, setYear] = useState("전체");
-  const [genre, setGenre] = useState("전체");
+  const [genre, setGenre] = useState(initialGenre || "전체");
+  const [page, setPage] = useState(1);
 
-  // 선택한 기준(리뷰일/발매일)의 날짜를 뽑는다
-  const dateOf = (a: ArchiveAlbum) => (basis === "review" ? a.reviewDate : a.releaseDate);
+  // 연도 필터는 항상 적용됨 — 발매일 기준일 땐 releaseDate, 그 외(리뷰일/평점순/좋아요순)엔 reviewDate를 쓴다.
+  const dateOf = (a: ArchiveAlbum) => (basis === "release" ? a.releaseDate : a.reviewDate);
 
   const years = useMemo(
     () =>
@@ -46,7 +58,18 @@ export function ArchiveFilters({ albums }: { albums: ArchiveAlbum[] }) {
         (year === "전체" || yearOf(dateOf(a)) === year) &&
         (genre === "전체" || a.genre === genre)
     )
-    .sort((a, b) => ((dateOf(a) ?? "") < (dateOf(b) ?? "") ? 1 : -1));
+    .sort((a, b) => {
+      if (basis === "rating") return (b.manualRating ?? 0) - (a.manualRating ?? 0);
+      if (basis === "likes") return (b.likeCount ?? 0) - (a.likeCount ?? 0);
+      return (dateOf(a) ?? "") < (dateOf(b) ?? "") ? 1 : -1;
+    });
+
+  const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const paged = shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [basis, year, genre]);
 
   function changeBasis(b: Basis) {
     setBasis(b);
@@ -55,12 +78,14 @@ export function ArchiveFilters({ albums }: { albums: ArchiveAlbum[] }) {
 
   return (
     <div>
-      {/* 기준 토글: 리뷰일 / 발매일 */}
-      <div className="mb-4 inline-flex rounded-full border border-line p-1 text-xs">
+      {/* 기준 토글: 리뷰일 / 발매일 / 평점순 / 좋아요순 */}
+      <div className="mb-4 inline-flex flex-wrap rounded-full border border-line p-1 text-xs">
         {(
           [
             ["review", "내 리뷰일 기준"],
             ["release", "앨범 발매일 기준"],
+            ["rating", "평점순"],
+            ["likes", "좋아요순"],
           ] as [Basis, string][]
         ).map(([key, label]) => (
           <button
@@ -79,21 +104,34 @@ export function ArchiveFilters({ albums }: { albums: ArchiveAlbum[] }) {
       <FilterRow label="연도" options={years} value={year} onChange={setYear} />
       <FilterRow label="장르" options={genres} value={genre} onChange={setGenre} />
 
-      <ul className="mt-6">
-        {shown.map((a) => (
-          <li key={a.id} className="flex items-center gap-4 border-b border-line py-3">
-            <Cover id={a.id} title={a.title} url={a.coverImageUrl} size={44} />
-            <Link href={`/music/album/${a.id}`} className="flex-1 hover:text-acc">
-              <span className="font-medium">{a.title}</span>{" "}
-              <span className="text-sm text-mut">— {a.artist}</span>
-            </Link>
-            <span className="text-xs text-mut">
-              {a.genre} · {basis === "review" ? "리뷰" : "발매"} {yearOf(dateOf(a))}
-            </span>
-          </li>
+      <div className="mt-6 grid grid-cols-1 gap-4">
+        {paged.map((a) => (
+          <AlbumRatingCard key={a.id} album={a} />
         ))}
-      </ul>
+      </div>
       {shown.length === 0 && <p className="mt-6 text-sm text-mut">해당 조건의 앨범이 없습니다.</p>}
+
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2 text-sm">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="rounded-full border border-line px-3 py-1.5 disabled:opacity-30"
+          >
+            이전
+          </button>
+          <span className="text-mut">
+            {page} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="rounded-full border border-line px-3 py-1.5 disabled:opacity-30"
+          >
+            다음
+          </button>
+        </div>
+      )}
     </div>
   );
 }

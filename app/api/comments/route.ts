@@ -12,7 +12,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const targetType = url.searchParams.get("targetType") || "album";
   const targetId = Number(url.searchParams.get("targetId"));
-  const comments = repo.listComments(targetType, targetId).map((c) => ({
+  const list = await repo.listComments(targetType, targetId);
+  const comments = list.map((c) => ({
     id: c.id,
     authorName: c.authorName,
     content: c.content,
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: `spam:${spam.reason}` }, { status: 429 });
   }
 
-  const comment = repo.addComment({
+  const comment = await repo.addComment({
     targetType,
     targetId: Number(targetId),
     authorName: String(authorName).slice(0, 64),
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
 // DELETE /api/comments  { id, password }
 export async function DELETE(req: Request) {
   const { id, password } = await req.json().catch(() => ({}));
-  const ok = repo.deleteComment(Number(id), hashPassword(String(password)));
+  const ok = await repo.deleteComment(Number(id), hashPassword(String(password)));
   if (!ok) {
     return NextResponse.json({ ok: false, error: "wrong password or not found" }, { status: 403 });
   }

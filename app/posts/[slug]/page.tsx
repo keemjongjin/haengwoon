@@ -4,7 +4,10 @@ import { getAllPostSlugs, getPost } from "@/lib/posts";
 import { mdxOptions } from "@/lib/mdx";
 import { formatDate } from "@/lib/format";
 import { Toc } from "@/components/blog/Toc";
+import { TocFloating } from "@/components/blog/TocFloating";
 import { Comments } from "@/components/features/Comments";
+import { repo } from "@/lib/db/repo";
+import { isAdmin } from "@/lib/auth";
 
 export function generateStaticParams() {
   return getAllPostSlugs().map((slug) => ({ slug }));
@@ -31,6 +34,8 @@ export default async function PostPage({
 }) {
   const { slug } = await params;
   if (!getAllPostSlugs().includes(slug)) notFound();
+  const hidden = await repo.getHiddenSlugs();
+  if (hidden.has(slug) && !(await isAdmin())) notFound();
   const post = getPost(slug);
 
   return (
@@ -55,12 +60,16 @@ export default async function PostPage({
       </header>
 
       <Toc items={post.toc} />
+      <TocFloating items={post.toc} />
 
       <div className="article">
         <MDXRemote source={post.content} options={mdxOptions} />
       </div>
 
-      <Comments />
+      <section className="mt-16 border-t border-line pt-8">
+        <h2 className="mb-4 text-sm font-medium text-mut">댓글</h2>
+        <Comments />
+      </section>
     </article>
   );
 }

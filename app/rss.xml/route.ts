@@ -1,4 +1,4 @@
-import { getAllPosts } from "@/lib/posts";
+import { getVisiblePosts } from "@/lib/posts";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const TITLE = "Haengwoon — Tech";
@@ -14,7 +14,7 @@ function escapeXml(s: string) {
 }
 
 export async function GET() {
-  const posts = getAllPosts();
+  const posts = await getVisiblePosts();
   const items = posts
     .map(
       (p) => `    <item>
