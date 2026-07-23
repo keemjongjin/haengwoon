@@ -14,7 +14,7 @@ export type ChartAlbum = {
   manualRating: number | null;
   eloScore10: number;
   review?: string | null;
-  favoriteTrack?: { id: number; title: string; previewUrl?: string | null; manualRating?: number | null } | null;
+  favoriteTrack?: { id: number; title: string; previewUrl?: string | null } | null;
 };
 
 type Tab = "rating" | "elo";

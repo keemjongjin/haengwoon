@@ -2,21 +2,19 @@ import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
 import { isAdmin } from "@/lib/auth";
 
-// PATCH /api/tracks/:id/rating  { rating }  → 곡별 평점 지정 (관리자 전용)
+// PATCH /api/tracks/:id/rating  { rating }  → 곡별 평점(0=그냥 그럼/1=좋음/2=개좋음) 지정 (관리자 전용)
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdmin())) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
   const { id } = await params;
   const { rating } = await req.json().catch(() => ({}));
-  // 빈 값("" | null | undefined)은 "평점 해제"로 처리 — Number("")가 0이 되어
-  // 삭제해도 0.0으로 남던 문제를 여기서 막는다.
   let value: number | null;
-  if (rating === "" || rating === null || rating === undefined) {
+  if (rating === null || rating === undefined) {
     value = null;
   } else {
     const num = Number(rating);
-    if (Number.isNaN(num)) {
+    if (!Number.isInteger(num) || num < 0 || num > 2) {
       return NextResponse.json({ ok: false, error: "invalid rating" }, { status: 400 });
     }
     value = num;

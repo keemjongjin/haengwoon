@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Cover } from "@/components/music/Cover";
 import { SpotifyEmbed } from "@/components/music/SpotifyEmbed";
+import { TrackTierStars } from "@/components/music/TrackTierStars";
 import { GenrePicker } from "./GenrePicker";
 import { RegisterAlbumModal } from "./RegisterAlbumModal";
 import { useAdminToast, describeFailure } from "./AdminToastContext";
@@ -34,27 +35,11 @@ type Track = {
   id: number;
   title: string;
   trackNumber: number;
-  manualRating: number | null;
+  manualRating: number | null; // 0=그냥 그럼/1=좋음/2=개좋음
   isFavorite: boolean;
   previewUrl: string | null;
   comment: string | null;
 };
-
-function StarIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3.5l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z" />
-    </svg>
-  );
-}
 
 type SearchResult = {
   spotifyAlbumId: string;
@@ -80,7 +65,6 @@ export function MusicAdmin() {
 
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [tracksByAlbum, setTracksByAlbum] = useState<Record<number, Track[]>>({});
-  const [trackRatingDrafts, setTrackRatingDrafts] = useState<Record<number, string>>({});
   const [trackCommentDrafts, setTrackCommentDrafts] = useState<Record<number, string>>({});
   const [trackPreviewDrafts, setTrackPreviewDrafts] = useState<Record<number, string>>({});
   const [backfillingId, setBackfillingId] = useState<number | null>(null);
@@ -199,12 +183,6 @@ export function MusicAdmin() {
       const data = await res.json();
       if (data.ok) {
         setTracksByAlbum((m) => ({ ...m, [id]: data.tracks }));
-        setTrackRatingDrafts((d) => ({
-          ...d,
-          ...Object.fromEntries(
-            data.tracks.map((t: Track) => [t.id, t.manualRating != null ? String(t.manualRating) : ""])
-          ),
-        }));
         setTrackCommentDrafts((d) => ({
           ...d,
           ...Object.fromEntries(data.tracks.map((t: Track) => [t.id, t.comment ?? ""])),
@@ -220,33 +198,24 @@ export function MusicAdmin() {
   }
 
   // 트랙별로 따로 눌러야 했던 저장 버튼들을 앨범 단위 버튼 하나로 통합 —
-  // 현재 펼쳐진 앨범의 모든 트랙에 대해 평점/코멘트/미리듣기 URL을 한 번에 저장.
+  // 현재 펼쳐진 앨범의 모든 트랙에 대해 코멘트/미리듣기 URL을 한 번에 저장.
+  // (평점은 별 클릭 시 최애곡 토글처럼 즉시 저장되므로 여기서 다루지 않음)
   async function saveAllTracks(albumId: number) {
     const tracks = tracksByAlbum[albumId] ?? [];
     if (tracks.length === 0) return;
 
-    const requests = tracks.flatMap((t) => {
-      const ratingTrimmed = (trackRatingDrafts[t.id] ?? "").trim();
-      const ratingValid = ratingTrimmed === "" || !Number.isNaN(Number(ratingTrimmed));
-      const ratingReq = ratingValid
-        ? fetch(`/api/tracks/${t.id}/rating`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ rating: ratingTrimmed === "" ? null : Number(ratingTrimmed) }),
-          })
-        : null;
-      const commentReq = fetch(`/api/tracks/${t.id}/comment`, {
+    const requests = tracks.flatMap((t) => [
+      fetch(`/api/tracks/${t.id}/comment`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comment: trackCommentDrafts[t.id] ?? "" }),
-      });
-      const previewReq = fetch(`/api/tracks/${t.id}/preview`, {
+      }),
+      fetch(`/api/tracks/${t.id}/preview`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ previewUrl: trackPreviewDrafts[t.id] ?? "" }),
-      });
-      return [ratingReq, commentReq, previewReq].filter((r): r is Promise<Response> => r !== null);
-    });
+      }),
+    ]);
 
     const results = await Promise.all(requests);
     const failed = results.some((r) => !r.ok);
@@ -255,12 +224,6 @@ export function MusicAdmin() {
     const data = await res.json();
     if (data.ok) {
       setTracksByAlbum((m) => ({ ...m, [albumId]: data.tracks }));
-      setTrackRatingDrafts((d) => ({
-        ...d,
-        ...Object.fromEntries(
-          data.tracks.map((t: Track) => [t.id, t.manualRating != null ? String(t.manualRating) : ""])
-        ),
-      }));
       setTrackCommentDrafts((d) => ({
         ...d,
         ...Object.fromEntries(data.tracks.map((t: Track) => [t.id, t.comment ?? ""])),
@@ -273,6 +236,25 @@ export function MusicAdmin() {
 
     if (failed) showError("일부 항목이 저장되지 않았어요. 다시 시도해주세요.");
     else showSuccess("수록곡 정보를 저장했어요.");
+  }
+
+  // 최애곡 토글과 같은 방식으로 별 클릭 즉시 저장
+  async function saveTrackTier(trackId: number, albumId: number, tier: number) {
+    const res = await fetch(`/api/tracks/${trackId}/rating`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating: tier }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      const nowRating = updated.track.manualRating as number | null;
+      setTracksByAlbum((m) => ({
+        ...m,
+        [albumId]: m[albumId].map((t) => (t.id === trackId ? { ...t, manualRating: nowRating } : t)),
+      }));
+    } else {
+      showError(await describeFailure(res));
+    }
   }
 
   function toggleDeezerPanel(trackId: number, defaultQuery: string) {
@@ -608,7 +590,10 @@ export function MusicAdmin() {
                   </div>
                   <ul className="space-y-3">
                     {(tracksByAlbum[al.id] ?? []).map((t) => (
-                      <li key={t.id} className="text-sm">
+                      <li
+                        key={t.id}
+                        className={"rounded-lg text-sm " + (t.isFavorite ? "bg-acc/5" : "")}
+                      >
                         <div className="flex items-center gap-3">
                           <span
                             className={"w-3 shrink-0 text-center " + (t.previewUrl ? "text-acc" : "text-mut/30")}
@@ -618,22 +603,22 @@ export function MusicAdmin() {
                           </span>
                           <span className="w-5 text-right text-mut">{t.trackNumber}</span>
                           <span className="flex-1 truncate">{t.title}</span>
-                          <input
-                            type="number"
-                            min={0}
-                            max={10}
-                            step={0.1}
-                            value={trackRatingDrafts[t.id] ?? ""}
-                            onChange={(e) => setTrackRatingDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
-                            placeholder="평점"
-                            className="w-16 rounded-lg border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-acc"
+                          <TrackTierStars
+                            tier={t.manualRating}
+                            isFavorite={t.isFavorite}
+                            onChange={(tier) => saveTrackTier(t.id, al.id, tier)}
                           />
                           <button
                             onClick={() => toggleTrackFavorite(t.id, al.id)}
-                            aria-label="최애곡 토글"
-                            className={t.isFavorite ? "text-acc" : "text-mut/40 hover:text-acc"}
+                            aria-pressed={t.isFavorite}
+                            className={
+                              "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors " +
+                              (t.isFavorite
+                                ? "border-acc bg-acc text-on-acc"
+                                : "border-line text-mut/60 hover:border-acc hover:text-acc")
+                            }
                           >
-                            <StarIcon filled={t.isFavorite} />
+                            최애곡
                           </button>
                         </div>
                         <div className="mt-1.5 flex items-center gap-2 pl-8">

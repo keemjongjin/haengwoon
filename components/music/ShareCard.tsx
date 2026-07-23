@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/common/Logo";
 import { ratingColor } from "@/lib/rating";
+import { TrackTierStars } from "./TrackTierStars";
 
 const HUES = ["#c026d3", "#dc2626", "#1d4ed8", "#0891b2", "#7c3aed", "#ea580c"];
 
@@ -14,10 +15,13 @@ export type ShareSubject = {
   title: string;
   artist: string;
   coverImageUrl: string | null;
+  /** 앨범 공유일 때만 사용 (0~10) */
   manualRating: number | null;
+  /** 곡 공유일 때만 사용 (0~2 별 등급) */
+  trackTier?: { tier: number | null; isFavorite: boolean } | null;
   comment?: string | null;
   /** 앨범 공유일 때만: 최애곡 정보 (표시 여부는 토글로 선택 가능) */
-  favorite?: { title: string; manualRating: number | null } | null;
+  favorite?: { title: string; tier: number | null } | null;
   filenameBase: string;
   colorSeed: number;
 };
@@ -242,7 +246,12 @@ export function ShareCard({ subject, triggerSize = "lg" }: { subject: ShareSubje
                       {subject.artist} · {subject.typeLabel}
                     </p>
                   </div>
-                  {subject.manualRating != null && <RatingRing value={subject.manualRating} />}
+                  {subject.typeLabel === "Album" && subject.manualRating != null && (
+                    <RatingRing value={subject.manualRating} />
+                  )}
+                  {subject.typeLabel === "Song" && subject.trackTier && (
+                    <TrackTierStars tier={subject.trackTier.tier} isFavorite={subject.trackTier.isFavorite} />
+                  )}
                 </div>
 
                 {subject.comment && (
@@ -270,9 +279,9 @@ export function ShareCard({ subject, triggerSize = "lg" }: { subject: ShareSubje
                         <p className="truncate text-sm font-semibold">{subject.favorite.title}</p>
                         <p className="truncate text-xs text-black/55">{subject.artist}</p>
                       </div>
-                      {subject.favorite.manualRating != null && (
-                        <span className="shrink-0 rounded-full bg-black/10 px-2.5 py-1 text-xs font-bold text-[#16a34a]">
-                          {subject.favorite.manualRating.toFixed(1)}
+                      {!!subject.favorite.tier && (
+                        <span className="shrink-0 rounded-full bg-black/10 px-2.5 py-1">
+                          <TrackTierStars tier={subject.favorite.tier} isFavorite />
                         </span>
                       )}
                     </div>
