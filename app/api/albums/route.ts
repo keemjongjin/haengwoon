@@ -24,11 +24,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
   const { spotifyAlbumId } = await req.json().catch(() => ({}));
-  const album = await spotify.getAlbum(spotifyAlbumId);
-  if (!album) {
-    return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
+  try {
+    const album = await spotify.getAlbum(spotifyAlbumId);
+    if (!album) {
+      return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
+    }
+    const row = await repo.addAlbumFromSpotify(album);
+    const withTracks = await repo.getAlbumWithTracks(row.id);
+    return NextResponse.json({ ok: true, album: row, tracks: withTracks?.tracks ?? [] });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 });
   }
-  const row = await repo.addAlbumFromSpotify(album);
-  const withTracks = await repo.getAlbumWithTracks(row.id);
-  return NextResponse.json({ ok: true, album: row, tracks: withTracks?.tracks ?? [] });
 }

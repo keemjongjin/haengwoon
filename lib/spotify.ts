@@ -115,6 +115,7 @@ type SpotifyApiAlbum = {
   artists: { name: string }[];
   images: { url: string }[];
   release_date: string;
+  release_date_precision?: "day" | "month" | "year";
   genres?: string[];
   album_type?: string;
   tracks?: {
@@ -128,13 +129,23 @@ type SpotifyApiAlbum = {
   };
 };
 
+// DB의 release_date 컬럼은 완전한 YYYY-MM-DD만 허용하는데, Spotify는 오래된 앨범일수록
+// 연도만(release_date_precision: "year") 또는 연-월까지만 주는 경우가 많아(예: Resident Alien,
+// Spacehog, 1995) 그대로 저장하면 "invalid input syntax for type date" 로 등록이 500 에러남.
+// 정밀도에 맞춰 부족한 자리를 01로 채워 항상 유효한 날짜로 정규화한다.
+function normalizeReleaseDate(date: string, precision?: string): string {
+  if (precision === "year") return `${date}-01-01`;
+  if (precision === "month") return `${date}-01`;
+  return date;
+}
+
 function mapAlbum(a: SpotifyApiAlbum): SpotifyAlbum {
   return {
     spotifyAlbumId: a.id,
     title: a.name,
     artist: a.artists.map((x) => x.name).join(", "),
     coverImageUrl: a.images?.[0]?.url ?? "",
-    releaseDate: a.release_date,
+    releaseDate: normalizeReleaseDate(a.release_date, a.release_date_precision),
     // Spotify가 앨범/아티스트 genres 필드 제공을 중단해 항상 빈 배열 → 등록 시 관리자가 직접 입력.
     genre: a.genres?.[0],
     albumType: a.album_type,
