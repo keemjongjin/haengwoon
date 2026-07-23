@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 내부 개발 문서/시안 (서비스 실행에 불필요, README만 공개 유지)
+AGENTS.md
+CLAUDE.md
+DECISIONS.log
+DEPLOY.md
+PLAN.md
+design-preview.html
