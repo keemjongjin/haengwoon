@@ -180,9 +180,10 @@ export const repo = {
     return row;
   },
 
-  async setManualRating(id: number, rating: number): Promise<AlbumRow | undefined> {
+  /** rating이 null이면 평점 해제(미평가 상태로) */
+  async setManualRating(id: number, rating: number | null): Promise<AlbumRow | undefined> {
     const dbc = await withDb();
-    const clamped = Math.max(0, Math.min(10, rating));
+    const clamped = rating == null ? null : Math.max(0, Math.min(10, rating));
     const [row] = await dbc
       .update(schema.albums)
       .set({ manualRating: clamped })
@@ -243,10 +244,10 @@ export const repo = {
     return row;
   },
 
-  /** 관리자: 곡별 평점 설정 */
-  async setTrackRating(trackId: number, rating: number): Promise<TrackRow | undefined> {
+  /** 관리자: 곡별 평점 설정. rating이 null이면 평점 해제(미평가 상태로) */
+  async setTrackRating(trackId: number, rating: number | null): Promise<TrackRow | undefined> {
     const dbc = await withDb();
-    const clamped = Math.max(0, Math.min(10, rating));
+    const clamped = rating == null ? null : Math.max(0, Math.min(10, rating));
     const [row] = await dbc
       .update(schema.tracks)
       .set({ manualRating: clamped })

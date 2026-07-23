@@ -134,12 +134,13 @@ export function MusicAdmin() {
   }
 
   async function saveRating(id: number) {
-    const val = Number(ratingDrafts[id]);
-    if (Number.isNaN(val)) return;
+    const trimmed = (ratingDrafts[id] ?? "").trim();
+    if (trimmed !== "" && Number.isNaN(Number(trimmed))) return;
+    const rating = trimmed === "" ? null : Number(trimmed);
     const res = await fetch(`/api/albums/${id}/rating`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rating: val }),
+      body: JSON.stringify({ rating }),
     });
     if (res.ok) {
       await loadStandings();
@@ -218,60 +219,60 @@ export function MusicAdmin() {
     }
   }
 
-  async function saveTrackRating(trackId: number, albumId: number) {
-    const val = Number(trackRatingDrafts[trackId]);
-    if (Number.isNaN(val)) return;
-    const res = await fetch(`/api/tracks/${trackId}/rating`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rating: val }),
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setTracksByAlbum((m) => ({
-        ...m,
-        [albumId]: m[albumId].map((t) => (t.id === trackId ? { ...t, manualRating: updated.track.manualRating } : t)),
-      }));
-      showSuccess("곡 평점을 저장했어요.");
-    } else {
-      showError(await describeFailure(res));
-    }
-  }
+  // 트랙별로 따로 눌러야 했던 저장 버튼들을 앨범 단위 버튼 하나로 통합 —
+  // 현재 펼쳐진 앨범의 모든 트랙에 대해 평점/코멘트/미리듣기 URL을 한 번에 저장.
+  async function saveAllTracks(albumId: number) {
+    const tracks = tracksByAlbum[albumId] ?? [];
+    if (tracks.length === 0) return;
 
-  async function saveTrackComment(trackId: number, albumId: number) {
-    const res = await fetch(`/api/tracks/${trackId}/comment`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comment: trackCommentDrafts[trackId] ?? "" }),
+    const requests = tracks.flatMap((t) => {
+      const ratingTrimmed = (trackRatingDrafts[t.id] ?? "").trim();
+      const ratingValid = ratingTrimmed === "" || !Number.isNaN(Number(ratingTrimmed));
+      const ratingReq = ratingValid
+        ? fetch(`/api/tracks/${t.id}/rating`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rating: ratingTrimmed === "" ? null : Number(ratingTrimmed) }),
+          })
+        : null;
+      const commentReq = fetch(`/api/tracks/${t.id}/comment`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment: trackCommentDrafts[t.id] ?? "" }),
+      });
+      const previewReq = fetch(`/api/tracks/${t.id}/preview`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ previewUrl: trackPreviewDrafts[t.id] ?? "" }),
+      });
+      return [ratingReq, commentReq, previewReq].filter((r): r is Promise<Response> => r !== null);
     });
-    if (res.ok) {
-      const updated = await res.json();
-      setTracksByAlbum((m) => ({
-        ...m,
-        [albumId]: m[albumId].map((t) => (t.id === trackId ? { ...t, comment: updated.track.comment } : t)),
-      }));
-      showSuccess("곡 코멘트를 저장했어요.");
-    } else {
-      showError(await describeFailure(res));
-    }
-  }
 
-  async function saveTrackPreview(trackId: number, albumId: number) {
-    const res = await fetch(`/api/tracks/${trackId}/preview`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ previewUrl: trackPreviewDrafts[trackId] ?? "" }),
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setTracksByAlbum((m) => ({
-        ...m,
-        [albumId]: m[albumId].map((t) => (t.id === trackId ? { ...t, previewUrl: updated.track.previewUrl } : t)),
+    const results = await Promise.all(requests);
+    const failed = results.some((r) => !r.ok);
+
+    const res = await fetch(`/api/albums/${albumId}`);
+    const data = await res.json();
+    if (data.ok) {
+      setTracksByAlbum((m) => ({ ...m, [albumId]: data.tracks }));
+      setTrackRatingDrafts((d) => ({
+        ...d,
+        ...Object.fromEntries(
+          data.tracks.map((t: Track) => [t.id, t.manualRating != null ? String(t.manualRating) : ""])
+        ),
       }));
-      showSuccess("미리듣기 URL을 저장했어요.");
-    } else {
-      showError(await describeFailure(res));
+      setTrackCommentDrafts((d) => ({
+        ...d,
+        ...Object.fromEntries(data.tracks.map((t: Track) => [t.id, t.comment ?? ""])),
+      }));
+      setTrackPreviewDrafts((d) => ({
+        ...d,
+        ...Object.fromEntries(data.tracks.map((t: Track) => [t.id, t.previewUrl ?? ""])),
+      }));
     }
+
+    if (failed) showError("일부 항목이 저장되지 않았어요. 다시 시도해주세요.");
+    else showSuccess("수록곡 정보를 저장했어요.");
   }
 
   function toggleDeezerPanel(trackId: number, defaultQuery: string) {
@@ -588,13 +589,22 @@ export function MusicAdmin() {
                     <p className="text-xs text-mut">
                       {backfillMsg[al.id] ?? "Deezer에서 미리듣기 오디오 자동 매칭"}
                     </p>
-                    <button
-                      onClick={() => backfillPreviews(al.id)}
-                      disabled={backfillingId === al.id}
-                      className="rounded-full border border-line px-3 py-1 text-xs hover:border-acc disabled:opacity-50"
-                    >
-                      {backfillingId === al.id ? "채우는 중…" : "미리듣기 채우기"}
-                    </button>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        onClick={() => backfillPreviews(al.id)}
+                        disabled={backfillingId === al.id}
+                        className="rounded-full border border-line px-3 py-1 text-xs hover:border-acc disabled:opacity-50"
+                      >
+                        {backfillingId === al.id ? "채우는 중…" : "미리듣기 채우기"}
+                      </button>
+                      {/* 트랙별로 따로 있던 저장 버튼들을 여기 하나로 통합 — 평점/코멘트/미리듣기 URL 전부 한 번에 저장 */}
+                      <button
+                        onClick={() => saveAllTracks(al.id)}
+                        className="rounded-full bg-acc px-3 py-1 text-xs font-semibold text-on-acc hover:opacity-90"
+                      >
+                        저장
+                      </button>
+                    </div>
                   </div>
                   <ul className="space-y-3">
                     {(tracksByAlbum[al.id] ?? []).map((t) => (
@@ -619,12 +629,6 @@ export function MusicAdmin() {
                             className="w-16 rounded-lg border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-acc"
                           />
                           <button
-                            onClick={() => saveTrackRating(t.id, al.id)}
-                            className="rounded-full border border-line px-2 py-1 text-xs hover:border-acc"
-                          >
-                            저장
-                          </button>
-                          <button
                             onClick={() => toggleTrackFavorite(t.id, al.id)}
                             aria-label="최애곡 토글"
                             className={t.isFavorite ? "text-acc" : "text-mut/40 hover:text-acc"}
@@ -639,12 +643,6 @@ export function MusicAdmin() {
                             placeholder="곡 코멘트"
                             className="min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-acc"
                           />
-                          <button
-                            onClick={() => saveTrackComment(t.id, al.id)}
-                            className="shrink-0 rounded-full border border-line px-2 py-1 text-xs hover:border-acc"
-                          >
-                            저장
-                          </button>
                         </div>
                         <div className="mt-1.5 pl-8">
                           <div className="flex items-center gap-2">
@@ -654,12 +652,6 @@ export function MusicAdmin() {
                               placeholder="미리듣기 URL 직접 입력/수정 (자동 매칭이 틀렸을 때)"
                               className="min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-acc"
                             />
-                            <button
-                              onClick={() => saveTrackPreview(t.id, al.id)}
-                              className="shrink-0 rounded-full border border-line px-2 py-1 text-xs hover:border-acc"
-                            >
-                              저장
-                            </button>
                             <button
                               onClick={() => toggleDeezerPanel(t.id, `${t.title} ${al.artist}`)}
                               className="shrink-0 rounded-full border border-line px-2 py-1 text-xs hover:border-acc"
