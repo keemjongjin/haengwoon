@@ -2,9 +2,9 @@
 
 const TIER_LABELS = ["그냥 그럼", "좋음", "개좋음"];
 
-function StarIcon() {
+function StarIcon({ className }: { className?: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M12 3.5l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z" />
     </svg>
   );
@@ -28,9 +28,9 @@ export function TrackTierStars({
   if (!onChange) {
     if (value === 0) return null;
     return (
-      <span className={"inline-flex items-center gap-[1px] " + colorClass} title={TIER_LABELS[value]}>
+      <span className={"inline-flex items-center " + colorClass} title={TIER_LABELS[value]}>
         {Array.from({ length: value }, (_, i) => (
-          <StarIcon key={i} />
+          <StarIcon key={i} className={i > 0 ? "-ml-[3px]" : undefined} />
         ))}
       </span>
     );
@@ -38,7 +38,7 @@ export function TrackTierStars({
 
   return (
     <span
-      className={"inline-flex items-center gap-[1px] " + colorClass}
+      className={"inline-flex items-center " + colorClass}
       title={TIER_LABELS[value]}
       aria-label={isFavorite ? `최애곡 · ${TIER_LABELS[value]}` : TIER_LABELS[value]}
     >
@@ -48,7 +48,11 @@ export function TrackTierStars({
           type="button"
           onClick={() => onChange(value === i ? i - 1 : i)}
           aria-label={`${TIER_LABELS[i]} (${i}점)`}
-          className={"transition-opacity hover:opacity-70 " + (value >= i ? "opacity-100" : "opacity-20")}
+          className={
+            "transition-opacity hover:opacity-70 " +
+            (value >= i ? "opacity-100" : "opacity-20") +
+            (i > 1 ? " -ml-[3px]" : "")
+          }
         >
           <StarIcon />
         </button>

@@ -108,8 +108,10 @@ export function TrackList({
                 )}
               </span>
               <span className={"flex-1 truncate " + (isThisPlaying ? "font-medium" : "")}>{t.title}</span>
-              <TrackTierStars tier={t.manualRating} isFavorite={t.isFavorite} />
-              <span className="w-10 text-right text-xs text-mut">{formatDuration(t.durationMs)}</span>
+              <span className="flex items-center gap-1.5">
+                <TrackTierStars tier={t.manualRating} isFavorite={t.isFavorite} />
+                <span className="w-10 text-right text-xs text-mut">{formatDuration(t.durationMs)}</span>
+              </span>
               <button
                 onClick={() => setOpenMenuId(menuOpen ? null : t.id)}
                 aria-label="더보기"
