@@ -2,9 +2,9 @@ import Link from "next/link";
 
 // 소셜 바로가기 + 관리자 링크
 const LINKS = [
-  { label: "github", href: "https://github.com/" },
+  { label: "github", href: "https://github.com/keemjongjin" },
   { label: "resume", href: "/resume" },
-  { label: "instagram", href: "https://instagram.com/" },
+  { label: "instagram", href: "https://instagram.com/heang_woon" },
   { label: "admin", href: "/admin" },
 ];
 
