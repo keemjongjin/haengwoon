@@ -4,7 +4,7 @@ import Link from "next/link";
 const LINKS = [
   { label: "github", href: "https://github.com/keemjongjin" },
   { label: "resume", href: "/resume" },
-  { label: "instagram", href: "https://instagram.com/heang_woon" },
+  { label: "instagram", href: "https://instagram.com/haeng_woon" },
   { label: "admin", href: "/admin" },
 ];
 
