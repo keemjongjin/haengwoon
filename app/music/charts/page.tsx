@@ -23,7 +23,6 @@ export default async function ChartsPage() {
           id: favorites[a.id].id,
           title: favorites[a.id].title,
           previewUrl: favorites[a.id].previewUrl,
-          manualRating: favorites[a.id].manualRating,
         }
       : null,
   }));

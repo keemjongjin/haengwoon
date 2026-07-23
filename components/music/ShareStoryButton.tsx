@@ -36,7 +36,7 @@ export function ShareStoryButton({
     coverImageUrl: album.coverImageUrl,
     manualRating: album.manualRating,
     comment: album.review,
-    favorite: favorite ? { title: favorite.title, manualRating: favorite.manualRating } : null,
+    favorite: favorite ? { title: favorite.title, tier: favorite.manualRating } : null,
     filenameBase: album.title,
     colorSeed: album.id,
   };

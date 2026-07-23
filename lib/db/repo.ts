@@ -1,6 +1,7 @@
 import { and, count, desc, eq, gte, inArray, isNotNull } from "drizzle-orm";
 import { db, schema } from "./index";
 import { updateElo } from "@/lib/elo";
+import { todayKST } from "@/lib/format";
 import type { SpotifyAlbum } from "@/lib/spotify";
 
 // Drizzle + Neon 기반 저장소. (구 인메모리 repo와 동일한 인터페이스, 이제 async)
@@ -159,7 +160,7 @@ export const repo = {
         artist: album.artist,
         coverImageUrl: album.coverImageUrl,
         releaseDate: album.releaseDate,
-        reviewDate: new Date().toISOString().slice(0, 10),
+        reviewDate: todayKST(),
         genre: album.genre ?? null,
         albumType: album.albumType ?? "album",
       })
@@ -180,10 +181,10 @@ export const repo = {
     return row;
   },
 
-  /** rating이 null이면 평점 해제(미평가 상태로) */
+  /** rating이 null이거나 0이면 평점 해제(미평가 상태로) — 0점은 사실상 "안 매김"과 구분할 의미가 없어 통일 */
   async setManualRating(id: number, rating: number | null): Promise<AlbumRow | undefined> {
     const dbc = await withDb();
-    const clamped = rating == null ? null : Math.max(0, Math.min(10, rating));
+    const clamped = !rating ? null : Math.max(0, Math.min(10, rating));
     const [row] = await dbc
       .update(schema.albums)
       .set({ manualRating: clamped })
@@ -244,10 +245,10 @@ export const repo = {
     return row;
   },
 
-  /** 관리자: 곡별 평점 설정. rating이 null이면 평점 해제(미평가 상태로) */
-  async setTrackRating(trackId: number, rating: number | null): Promise<TrackRow | undefined> {
+  /** 관리자: 곡별 평점(0=그냥 그럼, 1=좋음, 2=개좋음) 설정. null은 미평가 상태로 되돌림 */
+  async setTrackRating(trackId: number, tier: number | null): Promise<TrackRow | undefined> {
     const dbc = await withDb();
-    const clamped = rating == null ? null : Math.max(0, Math.min(10, rating));
+    const clamped = tier == null ? null : Math.max(0, Math.min(2, Math.round(tier)));
     const [row] = await dbc
       .update(schema.tracks)
       .set({ manualRating: clamped })

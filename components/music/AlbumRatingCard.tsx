@@ -28,7 +28,6 @@ export type AlbumCardData = {
     id: number;
     title: string;
     previewUrl?: string | null;
-    manualRating?: number | null;
   } | null;
 };
 
@@ -100,7 +99,6 @@ export function AlbumRatingCard({ album }: { album: AlbumCardData }) {
       artist: album.artist,
       coverImageUrl: album.coverImageUrl,
       previewUrl,
-      manualRating: album.favoriteTrack.manualRating ?? null,
     });
   }
 

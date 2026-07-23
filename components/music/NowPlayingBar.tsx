@@ -66,11 +66,6 @@ export function NowPlayingBar() {
               <p className="truncate text-sm font-medium">{current.title}</p>
               <p className="truncate text-xs text-mut">{current.artist}</p>
             </div>
-            {current.manualRating != null && (
-              <span className="shrink-0 rounded-full bg-card px-2 py-0.5 text-xs font-bold text-acc">
-                {current.manualRating.toFixed(1)}
-              </span>
-            )}
           </>
         ) : (
           <div className="flex h-9 flex-1 items-center justify-center">

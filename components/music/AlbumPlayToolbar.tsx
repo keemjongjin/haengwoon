@@ -35,7 +35,6 @@ export type ToolbarTrack = {
   id: number;
   title: string;
   previewUrl: string | null;
-  manualRating: number | null;
 };
 
 // 전체재생 + Spotify에서 열기. size="lg"는 점수 영역, size="sm"은 수록곡 헤더 위치용 (위치·크기 맞바꿈).
@@ -62,7 +61,6 @@ export function AlbumPlayToolbar({
       artist: albumArtist,
       coverImageUrl: albumCoverImageUrl,
       previewUrl: t.previewUrl,
-      manualRating: t.manualRating,
     }));
 
   const isThisAlbumPlaying = isPlaying && playable.some((t) => t.id === current?.id);

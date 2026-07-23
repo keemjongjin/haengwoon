@@ -41,7 +41,7 @@ export const tracks = pgTable("tracks", {
   durationMs: integer("duration_ms"), // 앨범 상세 하단 총 재생시간 계산용
   previewUrl: text("preview_url"), // Spotify 30초 미리듣기 (없을 수 있음)
   isFavorite: boolean("is_favorite").notNull().default(false),
-  manualRating: real("manual_rating"), // 곡별 평점 (0~10, 관리자 지정)
+  manualRating: real("manual_rating"), // 곡별 평점 (0=그냥 그럼/1=좋음/2=개좋음, 관리자 지정)
   comment: text("comment"), // 곡별 코멘트 (관리자 지정, 더보기 메뉴/곡 스토리 공유에 노출)
   eloRating: integer("elo_rating").notNull().default(1500),
 });

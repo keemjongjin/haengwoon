@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAudioPlayer } from "./AudioPlayerContext";
 import { TrackShareButton } from "./TrackShareButton";
+import { TrackTierStars } from "./TrackTierStars";
 
 export type Track = {
   id: number;
@@ -11,7 +12,7 @@ export type Track = {
   durationMs: number | null;
   previewUrl: string | null;
   isFavorite: boolean;
-  manualRating: number | null;
+  manualRating: number | null; // 0=그냥 그럼/1=좋음/2=개좋음
   comment: string | null;
 };
 
@@ -21,22 +22,6 @@ function formatDuration(ms: number | null): string {
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-function StarIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3.5l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z" />
-    </svg>
-  );
 }
 
 function PlayIcon() {
@@ -110,7 +95,6 @@ export function TrackList({
                         artist: albumArtist,
                         coverImageUrl: albumCoverImageUrl,
                         previewUrl: t.previewUrl!,
-                        manualRating: t.manualRating,
                       })
                     }
                     aria-label={isThisPlaying ? "일시정지" : "미리듣기"}
@@ -124,14 +108,7 @@ export function TrackList({
                 )}
               </span>
               <span className={"flex-1 truncate " + (isThisPlaying ? "font-medium" : "")}>{t.title}</span>
-              {t.manualRating != null && (
-                <span className="text-xs font-medium text-mut">{t.manualRating.toFixed(1)}</span>
-              )}
-              {t.isFavorite && (
-                <span aria-label="최애곡" className="text-acc">
-                  <StarIcon filled />
-                </span>
-              )}
+              <TrackTierStars tier={t.manualRating} isFavorite={t.isFavorite} />
               <span className="w-10 text-right text-xs text-mut">{formatDuration(t.durationMs)}</span>
               <button
                 onClick={() => setOpenMenuId(menuOpen ? null : t.id)}
@@ -150,7 +127,13 @@ export function TrackList({
                   <p className="mb-2 text-xs text-mut">저장된 코멘트가 없습니다.</p>
                 )}
                 <TrackShareButton
-                  track={{ id: t.id, title: t.title, manualRating: t.manualRating, comment: t.comment }}
+                  track={{
+                    id: t.id,
+                    title: t.title,
+                    manualRating: t.manualRating,
+                    isFavorite: t.isFavorite,
+                    comment: t.comment,
+                  }}
                   albumArtist={albumArtist}
                   albumCoverImageUrl={albumCoverImageUrl}
                 />

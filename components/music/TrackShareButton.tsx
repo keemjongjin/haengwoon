@@ -7,7 +7,13 @@ export function TrackShareButton({
   albumArtist,
   albumCoverImageUrl,
 }: {
-  track: { id: number; title: string; manualRating: number | null; comment: string | null };
+  track: {
+    id: number;
+    title: string;
+    manualRating: number | null;
+    isFavorite: boolean;
+    comment: string | null;
+  };
   albumArtist: string;
   albumCoverImageUrl: string | null;
 }) {
@@ -16,7 +22,8 @@ export function TrackShareButton({
     title: track.title,
     artist: albumArtist,
     coverImageUrl: albumCoverImageUrl,
-    manualRating: track.manualRating,
+    manualRating: null,
+    trackTier: { tier: track.manualRating, isFavorite: track.isFavorite },
     comment: track.comment,
     filenameBase: track.title,
     colorSeed: track.id,

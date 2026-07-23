@@ -8,7 +8,6 @@ export type NowPlayingTrack = {
   artist: string;
   coverImageUrl: string | null;
   previewUrl: string;
-  manualRating: number | null;
 };
 
 type AudioPlayerContextValue = {

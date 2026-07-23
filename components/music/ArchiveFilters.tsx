@@ -16,7 +16,7 @@ export type ArchiveAlbum = {
   manualRating: number | null;
   review?: string | null;
   likeCount?: number;
-  favoriteTrack?: { id: number; title: string; previewUrl?: string | null; manualRating?: number | null } | null;
+  favoriteTrack?: { id: number; title: string; previewUrl?: string | null } | null;
 };
 
 type Basis = "review" | "release" | "rating" | "likes";
