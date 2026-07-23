@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAudioPlayer } from "./AudioPlayerContext";
 import { NoteIcon } from "./NoteIcon";
+import { ratingColor } from "@/lib/rating";
 import { LikeButton } from "./LikeButton";
 
 const HUES = ["#c026d3", "#dc2626", "#1d4ed8", "#0891b2", "#7c3aed", "#ea580c"];
@@ -32,10 +33,12 @@ export type AlbumCardData = {
 };
 
 // 우측 원형 프로그레스 링으로 평점을 표시. 레퍼런스(Beli류 평점 카드) 스타일.
+// 색상은 평점 구간(빨강/주황/초록)에 따라 달라짐.
 function RatingRing({ value }: { value: number }) {
   const r = 22;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(1, value / 10));
+  const color = ratingColor(value);
   return (
     <div className="relative h-14 w-14 shrink-0">
       <svg viewBox="0 0 56 56" className="h-14 w-14 -rotate-90">
@@ -45,14 +48,14 @@ function RatingRing({ value }: { value: number }) {
           cy="28"
           r={r}
           fill="none"
-          stroke="#22c55e"
+          stroke={color}
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#22c55e]">
+      <div className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color }}>
         {value.toFixed(1)}
       </div>
     </div>

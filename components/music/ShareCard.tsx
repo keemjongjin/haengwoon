@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/common/Logo";
+import { ratingColor } from "@/lib/rating";
 
 const HUES = ["#c026d3", "#dc2626", "#1d4ed8", "#0891b2", "#7c3aed", "#ea580c"];
 
@@ -25,6 +26,7 @@ function RatingRing({ value }: { value: number }) {
   const r = 22;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(1, value / 10));
+  const color = ratingColor(value);
   return (
     <div className="relative h-14 w-14 shrink-0">
       <svg viewBox="0 0 56 56" className="h-14 w-14 -rotate-90">
@@ -34,14 +36,14 @@ function RatingRing({ value }: { value: number }) {
           cy="28"
           r={r}
           fill="none"
-          stroke="#22c55e"
+          stroke={color}
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#16a34a]">
+      <div className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color }}>
         {value.toFixed(1)}
       </div>
     </div>

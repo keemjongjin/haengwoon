@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AlbumRatingCard } from "./AlbumRatingCard";
 
 export type ArchiveAlbum = {
@@ -20,7 +20,13 @@ export type ArchiveAlbum = {
 };
 
 type Basis = "review" | "release" | "rating" | "likes";
+type Dir = "desc" | "asc";
 const PAGE_SIZE = 10;
+
+// 리뷰일/발매일만 오름·내림 방향을 고를 수 있음(날짜 기준). 평점·좋아요는 항상 높은 순.
+function isDateBasis(b: Basis): boolean {
+  return b === "review" || b === "release";
+}
 
 function yearOf(d: string | null): string {
   return d ? d.slice(0, 4) : "?";
@@ -34,6 +40,7 @@ export function ArchiveFilters({
   initialGenre?: string;
 }) {
   const [basis, setBasis] = useState<Basis>("review");
+  const [sortDir, setSortDir] = useState<Dir>("desc");
   const [year, setYear] = useState("전체");
   const [genre, setGenre] = useState(initialGenre || "전체");
   const [page, setPage] = useState(1);
@@ -61,19 +68,36 @@ export function ArchiveFilters({
     .sort((a, b) => {
       if (basis === "rating") return (b.manualRating ?? 0) - (a.manualRating ?? 0);
       if (basis === "likes") return (b.likeCount ?? 0) - (a.likeCount ?? 0);
-      return (dateOf(a) ?? "") < (dateOf(b) ?? "") ? 1 : -1;
+      const da = dateOf(a) ?? "";
+      const db = dateOf(b) ?? "";
+      const cmp = da < db ? 1 : da > db ? -1 : 0; // 기본: 최신 먼저(내림차순)
+      return sortDir === "desc" ? cmp : -cmp;
     });
 
   const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
-  const paged = shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  useEffect(() => {
-    setPage(1);
-  }, [basis, year, genre]);
+  const safePage = Math.min(page, totalPages);
+  const paged = shown.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   function changeBasis(b: Basis) {
+    setPage(1);
+    // 이미 활성화된 날짜 기준을 다시 누르면 오름/내림 방향 토글, 아니면 기준 전환(기본 내림차순)
+    if (b === basis && isDateBasis(b)) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+      return;
+    }
     setBasis(b);
+    setSortDir("desc");
     setYear("전체"); // 기준 바뀌면 연도 초기화
+  }
+
+  function changeYear(y: string) {
+    setYear(y);
+    setPage(1);
+  }
+
+  function changeGenre(g: string) {
+    setGenre(g);
+    setPage(1);
   }
 
   return (
@@ -91,18 +115,28 @@ export function ArchiveFilters({
           <button
             key={key}
             onClick={() => changeBasis(key)}
+            aria-label={
+              isDateBasis(key)
+                ? `${label} (${basis === key && sortDir === "asc" ? "오름차순" : "내림차순"})`
+                : label
+            }
             className={
-              "rounded-full px-3 py-1.5 " +
+              "inline-flex items-center gap-1 rounded-full px-3 py-1.5 " +
               (basis === key ? "bg-acc text-on-acc font-medium" : "text-mut hover:text-fg")
             }
           >
             {label}
+            {isDateBasis(key) && (
+              <span aria-hidden="true" className="text-[10px] leading-none">
+                {basis === key && sortDir === "asc" ? "↑" : "↓"}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      <FilterRow label="연도" options={years} value={year} onChange={setYear} />
-      <FilterRow label="장르" options={genres} value={genre} onChange={setGenre} />
+      <FilterRow label="연도" options={years} value={year} onChange={changeYear} />
+      <FilterRow label="장르" options={genres} value={genre} onChange={changeGenre} />
 
       <div className="mt-6 grid grid-cols-1 gap-4">
         {paged.map((a) => (
@@ -114,18 +148,18 @@ export function ArchiveFilters({
       {totalPages > 1 && (
         <div className="mt-8 flex items-center justify-center gap-2 text-sm">
           <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
+            onClick={() => setPage(Math.max(1, safePage - 1))}
+            disabled={safePage === 1}
             className="rounded-full border border-line px-3 py-1.5 disabled:opacity-30"
           >
             이전
           </button>
           <span className="text-mut">
-            {page} / {totalPages}
+            {safePage} / {totalPages}
           </span>
           <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+            disabled={safePage === totalPages}
             className="rounded-full border border-line px-3 py-1.5 disabled:opacity-30"
           >
             다음

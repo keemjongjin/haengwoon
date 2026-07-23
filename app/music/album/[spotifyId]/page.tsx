@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { repo } from "@/lib/db/repo";
-import { eloToScore10 } from "@/lib/elo";
+import { ratingColor } from "@/lib/rating";
 import { Cover } from "@/components/music/Cover";
 import { TrackList } from "@/components/music/TrackList";
 import { AlbumPlayToolbar } from "@/components/music/AlbumPlayToolbar";
@@ -47,7 +47,14 @@ export default async function AlbumPage({
   return (
     <div>
       <div className="flex flex-col gap-6 sm:flex-row">
-        <Cover id={album.id} title={album.title} url={album.coverImageUrl} size={160} />
+        <Cover
+          id={album.id}
+          title={album.title}
+          url={album.coverImageUrl}
+          size={160}
+          // 라이트: 검은 그림자로 배경과 분리 / 다크: 반투명 흰 링으로 분리 (각각 반대 테마선 자연히 안 보임)
+          className="shadow-lg shadow-black/20 ring-1 ring-white/10"
+        />
         <div className="flex-1">
           <h1 className="text-3xl font-bold">{album.title}</h1>
           <p className="mt-1 text-mut">
@@ -71,19 +78,17 @@ export default async function AlbumPage({
           <div className="mt-5 flex gap-8">
             <div>
               <p className="text-xs text-mut">평점 (내 점수)</p>
-              <p className="text-2xl font-bold">
+              <p
+                className="text-2xl font-bold"
+                style={album.manualRating != null ? { color: ratingColor(album.manualRating) } : undefined}
+              >
                 {album.manualRating ?? "–"}
                 <span className="text-sm font-medium text-mut">/10</span>
               </p>
             </div>
             <div>
               <p className="text-xs text-mut">Elo (취향 대결)</p>
-              <p className="text-2xl font-bold">
-                {album.eloRating}
-                <span className="ml-1 text-sm font-medium text-mut">
-                  ({eloToScore10(album.eloRating)})
-                </span>
-              </p>
+              <p className="text-2xl font-bold">{album.eloRating}</p>
             </div>
           </div>
 
@@ -111,7 +116,12 @@ export default async function AlbumPage({
             <ShareStoryButton album={album} tracks={tracks} size="sm" />
           </div>
         </div>
-        {hasPreview && <p className="mb-2 text-[10px] text-mut">미리듣기 제공: iTunes</p>}
+        {hasPreview && (
+          <div className="mb-2 text-[10px] text-mut">
+            <p>미리듣기 제공: Deezer</p>
+            <p>미리듣기 음원은 자동 매칭이라 실제 음원과 다를 수 있습니다.</p>
+          </div>
+        )}
 
         <TrackList tracks={tracks} albumArtist={album.artist} albumCoverImageUrl={album.coverImageUrl} />
 

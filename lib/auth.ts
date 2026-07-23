@@ -2,6 +2,11 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 // 관리자 단일 패스워드(ADMIN_KEY) → JWT. PLAN.md §5.2 / DECISIONS.log.
+// 배포 환경(NODE_ENV=production)에서 JWT_SECRET 누락 시 fail-fast —
+// 조용히 알려진 기본값으로 서명하면 누구나 admin JWT를 위조할 수 있음.
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("JWT_SECRET 환경변수가 설정되지 않았습니다. 배포 환경에서는 필수입니다.");
+}
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret");
 export const AUTH_COOKIE = "admin_token";
 

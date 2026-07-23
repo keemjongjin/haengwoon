@@ -19,6 +19,15 @@ type Album = {
   eloRating: number;
   eloScore10: number;
   reviewDate: string | null;
+  review: string | null;
+  createdAt: string;
+};
+
+type DeezerResult = {
+  trackId: string;
+  title: string;
+  artist: string;
+  album: string;
 };
 
 type Track = {
@@ -67,7 +76,7 @@ export function MusicAdmin() {
   const [registering, setRegistering] = useState<SearchResult | null>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editDraft, setEditDraft] = useState({ title: "", artist: "", genre: "" });
+  const [editDraft, setEditDraft] = useState({ title: "", artist: "", genre: "", review: "" });
 
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [tracksByAlbum, setTracksByAlbum] = useState<Record<number, Track[]>>({});
@@ -77,6 +86,11 @@ export function MusicAdmin() {
   const [backfillingId, setBackfillingId] = useState<number | null>(null);
   const [backfillMsg, setBackfillMsg] = useState<Record<number, string>>({});
 
+  const [deezerPanelOpen, setDeezerPanelOpen] = useState<Record<number, boolean>>({});
+  const [deezerQueryDrafts, setDeezerQueryDrafts] = useState<Record<number, string>>({});
+  const [deezerResults, setDeezerResults] = useState<Record<number, DeezerResult[]>>({});
+  const [deezerSearchingId, setDeezerSearchingId] = useState<number | null>(null);
+
   const [manageQuery, setManageQuery] = useState("");
   const [managePage, setManagePage] = useState(1);
   const MANAGE_PAGE_SIZE = 10;
@@ -84,7 +98,10 @@ export function MusicAdmin() {
   const loadStandings = useCallback(async () => {
     const res = await fetch("/api/albums");
     const data = await res.json();
-    const sorted = [...data.albums].sort((x: Album, y: Album) => y.eloRating - x.eloRating);
+    // 관리 편의를 위해 최신 등록순(createdAt 내림차순)으로 정렬 — 방금 추가한 앨범이 맨 위에.
+    const sorted = [...data.albums].sort((x: Album, y: Album) =>
+      x.createdAt < y.createdAt ? 1 : x.createdAt > y.createdAt ? -1 : 0
+    );
     setStandings(sorted);
     setRatingDrafts(
       Object.fromEntries(sorted.map((a) => [a.id, a.manualRating != null ? String(a.manualRating) : ""]))
@@ -134,21 +151,28 @@ export function MusicAdmin() {
 
   function startEdit(al: Album) {
     setEditingId(al.id);
-    setEditDraft({ title: al.title, artist: al.artist, genre: al.genre ?? "" });
+    setEditDraft({ title: al.title, artist: al.artist, genre: al.genre ?? "", review: al.review ?? "" });
   }
 
   async function saveEdit(id: number) {
-    const res = await fetch(`/api/albums/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editDraft),
-    });
-    if (res.ok) {
+    const [metaRes, reviewRes] = await Promise.all([
+      fetch(`/api/albums/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editDraft.title, artist: editDraft.artist, genre: editDraft.genre }),
+      }),
+      fetch(`/api/albums/${id}/review`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ review: editDraft.review }),
+      }),
+    ]);
+    if (metaRes.ok && reviewRes.ok) {
       setEditingId(null);
       await loadStandings();
       showSuccess("앨범 정보를 수정했어요.");
     } else {
-      showError(await describeFailure(res));
+      showError(await describeFailure(metaRes.ok ? reviewRes : metaRes));
     }
   }
 
@@ -248,6 +272,35 @@ export function MusicAdmin() {
     } else {
       showError(await describeFailure(res));
     }
+  }
+
+  function toggleDeezerPanel(trackId: number, defaultQuery: string) {
+    setDeezerPanelOpen((m) => ({ ...m, [trackId]: !m[trackId] }));
+    setDeezerQueryDrafts((d) => (d[trackId] != null ? d : { ...d, [trackId]: defaultQuery }));
+  }
+
+  async function searchDeezerForTrack(trackId: number) {
+    const term = deezerQueryDrafts[trackId]?.trim();
+    if (!term) return;
+    setDeezerSearchingId(trackId);
+    try {
+      const res = await fetch(`/api/deezer/search?term=${encodeURIComponent(term)}`);
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok) {
+        setDeezerResults((m) => ({ ...m, [trackId]: data.results }));
+      } else {
+        showError(data?.error ? `검색 실패: ${data.error}` : `검색에 실패했어요 (${res.status})`);
+      }
+    } catch {
+      showError("네트워크 오류로 검색에 실패했어요.");
+    } finally {
+      setDeezerSearchingId(null);
+    }
+  }
+
+  // 목록에서 고르면 입력칸에 프록시 경로가 채워짐 — 실제 저장은 기존 "저장" 버튼(다른 필드와 동일 패턴).
+  function pickDeezerResult(trackId: number, deezerTrackId: string) {
+    setTrackPreviewDrafts((d) => ({ ...d, [trackId]: `/api/deezer-preview/${deezerTrackId}` }));
   }
 
   async function backfillPreviews(albumId: number) {
@@ -441,36 +494,47 @@ export function MusicAdmin() {
           {pagedStandings.map((al) => (
             <li key={al.id} className="border-b border-line py-3">
               {editingId === al.id ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    value={editDraft.title}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, title: e.target.value }))}
-                    placeholder="제목"
-                    className="min-w-0 flex-1 rounded-lg border border-line bg-card px-2 py-1 text-sm outline-none focus:border-acc"
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      value={editDraft.title}
+                      onChange={(e) => setEditDraft((d) => ({ ...d, title: e.target.value }))}
+                      placeholder="제목"
+                      className="min-w-0 flex-1 rounded-lg border border-line bg-card px-2 py-1 text-sm outline-none focus:border-acc"
+                    />
+                    <input
+                      value={editDraft.artist}
+                      onChange={(e) => setEditDraft((d) => ({ ...d, artist: e.target.value }))}
+                      placeholder="아티스트"
+                      className="min-w-0 flex-1 rounded-lg border border-line bg-card px-2 py-1 text-sm outline-none focus:border-acc"
+                    />
+                    <GenrePicker
+                      genres={existingGenres}
+                      value={editDraft.genre}
+                      onChange={(v) => setEditDraft((d) => ({ ...d, genre: v }))}
+                    />
+                  </div>
+                  <textarea
+                    value={editDraft.review}
+                    onChange={(e) => setEditDraft((d) => ({ ...d, review: e.target.value }))}
+                    placeholder="코멘트"
+                    rows={2}
+                    className="w-full rounded-lg border border-line bg-card px-2 py-1.5 text-sm outline-none focus:border-acc"
                   />
-                  <input
-                    value={editDraft.artist}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, artist: e.target.value }))}
-                    placeholder="아티스트"
-                    className="min-w-0 flex-1 rounded-lg border border-line bg-card px-2 py-1 text-sm outline-none focus:border-acc"
-                  />
-                  <GenrePicker
-                    genres={existingGenres}
-                    value={editDraft.genre}
-                    onChange={(v) => setEditDraft((d) => ({ ...d, genre: v }))}
-                  />
-                  <button
-                    onClick={() => saveEdit(al.id)}
-                    className="rounded-full bg-acc px-3 py-1 text-xs font-semibold text-on-acc"
-                  >
-                    저장
-                  </button>
-                  <button
-                    onClick={() => setEditingId(null)}
-                    className="rounded-full border border-line px-3 py-1 text-xs hover:border-acc"
-                  >
-                    취소
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveEdit(al.id)}
+                      className="rounded-full bg-acc px-3 py-1 text-xs font-semibold text-on-acc"
+                    >
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="rounded-full border border-line px-3 py-1 text-xs hover:border-acc"
+                    >
+                      취소
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
@@ -522,7 +586,7 @@ export function MusicAdmin() {
                 <div className="mt-3 rounded-xl border border-line bg-card p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs text-mut">
-                      {backfillMsg[al.id] ?? "iTunes에서 미리듣기 오디오 자동 매칭"}
+                      {backfillMsg[al.id] ?? "Deezer에서 미리듣기 오디오 자동 매칭"}
                     </p>
                     <button
                       onClick={() => backfillPreviews(al.id)}
@@ -582,19 +646,73 @@ export function MusicAdmin() {
                             저장
                           </button>
                         </div>
-                        <div className="mt-1.5 flex items-center gap-2 pl-8">
-                          <input
-                            value={trackPreviewDrafts[t.id] ?? ""}
-                            onChange={(e) => setTrackPreviewDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
-                            placeholder="미리듣기 URL 직접 입력/수정 (자동 매칭이 틀렸을 때)"
-                            className="min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-acc"
-                          />
-                          <button
-                            onClick={() => saveTrackPreview(t.id, al.id)}
-                            className="shrink-0 rounded-full border border-line px-2 py-1 text-xs hover:border-acc"
-                          >
-                            저장
-                          </button>
+                        <div className="mt-1.5 pl-8">
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={trackPreviewDrafts[t.id] ?? ""}
+                              onChange={(e) => setTrackPreviewDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
+                              placeholder="미리듣기 URL 직접 입력/수정 (자동 매칭이 틀렸을 때)"
+                              className="min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-acc"
+                            />
+                            <button
+                              onClick={() => saveTrackPreview(t.id, al.id)}
+                              className="shrink-0 rounded-full border border-line px-2 py-1 text-xs hover:border-acc"
+                            >
+                              저장
+                            </button>
+                            <button
+                              onClick={() => toggleDeezerPanel(t.id, `${t.title} ${al.artist}`)}
+                              className="shrink-0 rounded-full border border-line px-2 py-1 text-xs hover:border-acc"
+                            >
+                              🔍 Deezer
+                            </button>
+                          </div>
+
+                          {deezerPanelOpen[t.id] && (
+                            <div className="mt-1.5 rounded-lg border border-line bg-bg p-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  value={deezerQueryDrafts[t.id] ?? ""}
+                                  onChange={(e) =>
+                                    setDeezerQueryDrafts((d) => ({ ...d, [t.id]: e.target.value }))
+                                  }
+                                  onKeyDown={(e) => e.key === "Enter" && searchDeezerForTrack(t.id)}
+                                  placeholder="검색어 (곡명 아티스트)"
+                                  className="min-w-0 flex-1 rounded-lg border border-line bg-card px-2 py-1 text-xs outline-none focus:border-acc"
+                                />
+                                <button
+                                  onClick={() => searchDeezerForTrack(t.id)}
+                                  disabled={deezerSearchingId === t.id}
+                                  className="shrink-0 rounded-full border border-line px-2 py-1 text-xs hover:border-acc disabled:opacity-50"
+                                >
+                                  {deezerSearchingId === t.id ? "검색 중…" : "검색"}
+                                </button>
+                              </div>
+                              {deezerResults[t.id] && deezerResults[t.id].length > 0 && (
+                                <ul className="mt-1.5 space-y-1">
+                                  {deezerResults[t.id].map((r, i) => (
+                                    <li key={i} className="flex items-center gap-2 text-xs">
+                                      <span className="min-w-0 flex-1 truncate text-mut">
+                                        {r.title}{" "}
+                                        <span className="text-mut/60">
+                                          — {r.artist} · {r.album}
+                                        </span>
+                                      </span>
+                                      <button
+                                        onClick={() => pickDeezerResult(t.id, r.trackId)}
+                                        className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[11px] hover:border-acc"
+                                      >
+                                        선택
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              {deezerResults[t.id]?.length === 0 && (
+                                <p className="mt-1.5 text-[11px] text-mut">검색 결과가 없어요.</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </li>
                     ))}

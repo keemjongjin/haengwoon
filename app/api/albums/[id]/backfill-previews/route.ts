@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
 import { isAdmin } from "@/lib/auth";
-import { fetchItunesPreviewUrl, sleep } from "@/lib/itunes";
+import { matchDeezerTrackId, deezerProxyUrl, sleep } from "@/lib/deezer";
 
-// iTunes 요청이 곡당 3초 간격이라 트랙 많은 앨범은 시간이 걸림 — Vercel 기본 타임아웃(10s)보다 길게 확보.
-export const maxDuration = 60;
+// Deezer는 rate limit이 여유로워(50req/5s) 곡 사이 짧은 간격이면 충분 — 타임아웃 여유만 살짝.
+export const maxDuration = 30;
 
-// POST /api/albums/:id/backfill-previews → iTunes에서 미리듣기 재조회해 빈 트랙만 채움 (관리자 전용)
+// POST /api/albums/:id/backfill-previews → Deezer에서 미리듣기 재조회해 빈 트랙만 채움 (관리자 전용).
+// previewUrl 컬럼에는 만료되는 Deezer URL 대신 프록시 경로(/api/deezer-preview/{id})를 저장한다.
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdmin())) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
@@ -15,15 +16,15 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const data = await repo.getAlbumWithTracks(Number(id));
   if (!data) return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
 
+  const needing = data.tracks.filter((t) => !t.previewUrl);
   let filled = 0;
-  for (const t of data.tracks) {
-    if (t.previewUrl) continue;
-    const url = await fetchItunesPreviewUrl(t.title, data.album.artist).catch(() => null);
-    if (url) {
-      await repo.setTrackPreviewUrl(t.id, url);
+  for (let i = 0; i < needing.length; i++) {
+    const deezerId = await matchDeezerTrackId(needing[i].title, data.album.artist).catch(() => null);
+    if (deezerId) {
+      await repo.setTrackPreviewUrl(needing[i].id, deezerProxyUrl(deezerId));
       filled += 1;
     }
-    await sleep(3000); // iTunes 공식 제한(약 분당 20회 = 3초 간격) 준수
+    if (i < needing.length - 1) await sleep(250); // 곡 사이 짧은 간격 (rate limit 여유)
   }
 
   const updated = await repo.getAlbumWithTracks(Number(id));

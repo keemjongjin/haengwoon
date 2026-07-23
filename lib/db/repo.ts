@@ -118,6 +118,8 @@ export const repo = {
     return { album, tracks };
   },
 
+  // reviewDate는 날짜(일 단위)라 같은 날 등록분은 순서가 불안정 → createdAt(타임스탬프)으로 2차 정렬해
+  // "가장 최신"이 항상 확정적으로 맨 앞에 오게 한다.
   /** 가장 최근 리뷰(평점 있는) 앨범 */
   async recentReview(): Promise<AlbumRow | undefined> {
     const dbc = await withDb();
@@ -125,7 +127,7 @@ export const repo = {
       .select()
       .from(schema.albums)
       .where(and(isNotNull(schema.albums.manualRating), isNotNull(schema.albums.reviewDate)))
-      .orderBy(desc(schema.albums.reviewDate))
+      .orderBy(desc(schema.albums.reviewDate), desc(schema.albums.createdAt))
       .limit(1);
     return rows[0];
   },
@@ -137,7 +139,7 @@ export const repo = {
       .select()
       .from(schema.albums)
       .where(and(isNotNull(schema.albums.manualRating), isNotNull(schema.albums.reviewDate)))
-      .orderBy(desc(schema.albums.reviewDate))
+      .orderBy(desc(schema.albums.reviewDate), desc(schema.albums.createdAt))
       .limit(limit);
   },
 
@@ -264,7 +266,7 @@ export const repo = {
     return row;
   },
 
-  /** iTunes 미리듣기 백필용 — Spotify 미도입 시절 등록된 트랙에 preview_url 채워넣기 */
+  /** 미리듣기 백필/수동 지정용 — previewUrl에 Deezer 프록시 경로(/api/deezer-preview/{id})를 저장 */
   async setTrackPreviewUrl(trackId: number, previewUrl: string | null): Promise<TrackRow | undefined> {
     const dbc = await withDb();
     const [row] = await dbc

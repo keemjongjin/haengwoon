@@ -8,11 +8,13 @@ export function Cover({
   title,
   url,
   size = 56,
+  className = "",
 }: {
   id: number;
   title: string;
   url?: string | null;
   size?: number;
+  className?: string;
 }) {
   const hue = HUES[id % HUES.length];
   if (url) {
@@ -22,14 +24,14 @@ export function Cover({
         alt={title}
         width={size}
         height={size}
-        className="rounded-lg object-cover"
+        className={"rounded-lg object-cover " + className}
         style={{ width: size, height: size }}
       />
     );
   }
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded-lg font-bold"
+      className={"flex shrink-0 items-center justify-center rounded-lg font-bold " + className}
       style={{ width: size, height: size, background: `${hue}33`, color: hue, fontSize: size * 0.4 }}
     >
       {title.slice(0, 1)}

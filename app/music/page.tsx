@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { repo } from "@/lib/db/repo";
+import { ratingColor } from "@/lib/rating";
 import { Cover } from "@/components/music/Cover";
 import { AlbumRatingCard } from "@/components/music/AlbumRatingCard";
 import { HeroFavoriteTrack } from "@/components/music/HeroFavoriteTrack";
@@ -51,7 +52,10 @@ export default async function MusicHome() {
           <Link href={`/artist/${encodeURIComponent(recent.artist)}`}>
             <p className="mt-2 text-lg text-mut hover:text-fg hover:underline">{recent.artist}</p>
           </Link>
-          <p className="mt-5 text-5xl font-bold text-acc">
+          <p
+            className="mt-5 text-5xl font-bold"
+            style={recent.manualRating != null ? { color: ratingColor(recent.manualRating) } : undefined}
+          >
             {recent.manualRating}
             <span className="ml-1 text-lg font-medium text-mut">/ 10</span>
           </p>

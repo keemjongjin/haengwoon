@@ -1,6 +1,5 @@
 // Spotify 어댑터. 키(env) 없으면 mock으로 동작 → 키 확보 후 env만 채우면 실연동.
 // PLAN.md §5.5. 앨범 메타(client credentials) + 재생(SDK, refresh token) 은 별개 자격증명.
-import { fetchItunesPreviewUrl, sleep } from "./itunes";
 
 export type PlaybackToken = { accessToken: string; expiresAt: number; mock: boolean };
 
@@ -171,20 +170,11 @@ const realAdapter: SpotifyAdapter = {
     });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Spotify 앨범 조회 실패: ${res.status}`);
-    const album = mapAlbum(await res.json());
-
-    // Spotify가 preview_url 제공을 중단해 iTunes Search API로 미리듣기 보완 (실패해도 무시).
-    for (const t of album.tracks) {
-      if (t.previewUrl) continue;
-      try {
-        t.previewUrl = await fetchItunesPreviewUrl(t.title, album.artist);
-      } catch {
-        // 매칭 실패는 흔한 일 — 미리듣기 없이 진행
-      }
-      await sleep(3000); // iTunes 공식 제한(약 분당 20회 = 3초 간격) 준수
-    }
-
-    return album;
+    // 메타데이터만 반환(빠름). Spotify가 preview_url을 안 주므로 미리듣기는 여기서 채우지 않고,
+    // 등록 후 관리자가 "미리듣기 채우기"(backfill-previews 라우트)로 보완한다.
+    // 미리듣기 백필을 여기서 인라인으로 돌리면 트랙 많은 앨범이 서버리스 타임아웃을
+    // 넘겨 등록 자체가 실패하기 때문. backfill 라우트는 증분 저장+재실행 이어받기라 안전하다.
+    return mapAlbum(await res.json());
   },
 
   async getPlaybackToken(): Promise<PlaybackToken> {
@@ -225,11 +215,13 @@ export const SPOTIFY_AUTH_SCOPES = [
   "user-read-playback-state",
 ].join(" ");
 
+export const SPOTIFY_STATE_COOKIE = "spotify_oauth_state";
+
 export function getSpotifyRedirectUri(): string {
   return process.env.SPOTIFY_REDIRECT_URI || "http://127.0.0.1:3000/api/spotify/callback";
 }
 
-export function buildSpotifyAuthorizeUrl(): string {
+export function buildSpotifyAuthorizeUrl(state: string): string {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   if (!clientId) throw new Error("SPOTIFY_CLIENT_ID가 설정되지 않았습니다.");
   const params = new URLSearchParams({
@@ -237,6 +229,7 @@ export function buildSpotifyAuthorizeUrl(): string {
     client_id: clientId,
     scope: SPOTIFY_AUTH_SCOPES,
     redirect_uri: getSpotifyRedirectUri(),
+    state,
   });
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
 }

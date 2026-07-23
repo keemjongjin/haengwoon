@@ -69,9 +69,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const audio = ensureAudio();
     audio.src = track.previewUrl;
     audio.volume = volumeRef.current;
-    audio.play();
     setCurrent(track);
     setIsPlaying(true);
+    // play()는 Promise를 반환 — 잘못된 URL이나 빠른 곡 전환(AbortError) 시 reject됨.
+    // uncaught rejection을 막고, 이 곡이 여전히 현재 곡일 때만 정지 상태로 되돌린다
+    // (전환 중이면 이미 다른 곡이 current라서 건드리지 않음).
+    audio.play()?.catch(() => {
+      if (currentRef.current?.id === track.id) setIsPlaying(false);
+    });
   }
 
   const play = useCallback((track: NowPlayingTrack) => {
@@ -82,8 +87,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         audioRef.current?.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current?.play();
         setIsPlaying(true);
+        audioRef.current?.play()?.catch(() => setIsPlaying(false));
       }
       return;
     }

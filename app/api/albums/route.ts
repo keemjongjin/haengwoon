@@ -4,9 +4,9 @@ import { spotify } from "@/lib/spotify";
 import { isAdmin } from "@/lib/auth";
 import { eloToScore10 } from "@/lib/elo";
 
-// iTunes 미리듣기 조회가 곡당 3초 간격(공식 요청 제한 준수)이라 트랙 많은 앨범은
-// 등록에 시간이 걸림 — Vercel 기본 타임아웃(10s)보다 길게 확보.
-export const maxDuration = 60;
+// 등록은 Spotify 메타데이터만 저장해 빠르게 끝난다(미리듣기는 등록 후 backfill로 채움).
+// Spotify API 응답이 느릴 때를 대비해 기본 타임아웃(10s)보다 약간의 여유만 둔다.
+export const maxDuration = 30;
 
 // GET /api/albums → 공개 목록 (평점 + Elo 둘 다 반환)
 export async function GET() {
