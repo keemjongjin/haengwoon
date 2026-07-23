@@ -10,9 +10,7 @@ export default async function TechHome() {
   return (
     <div>
       <h1 className="text-3xl font-semibold leading-relaxed">
-        안녕하세요!
-        <br />
-        <span className="text-acc">Frontend</span>를 좋아하는 개발자 jongjin입니다.
+        안녕하세요! 개발자 김종진입니다.
       </h1>
 
       <section className="mt-12">

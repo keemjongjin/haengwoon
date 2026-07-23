@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { Logo } from "./Logo";
 
 const NAV = {
   tech: [
@@ -49,10 +50,18 @@ export function Header() {
           className="shrink-0 whitespace-nowrap text-base font-semibold text-fg sm:text-xl"
           aria-label="Tech와 Music 모드 전환"
         >
-          Haengwoon
-          {/* _tech/_music 글자수 차이로 버튼 폭이 흔들리지 않도록 고정폭(ch)에 좌측 정렬 */}
-          <span className="inline-block w-[6ch] text-left text-xs font-normal text-fg sm:text-sm">
-            {mode === "tech" ? "_tech" : "_music"}
+          {/* 모바일: 헤더 텍스트가 넘쳐서 깨지는 걸 막기 위해 "Haengwoon" 대신 네잎클로버 로고 + 모드명.
+              애플뮤직 아이콘+워드마크처럼 세로 중앙정렬 + 2px 간격. */}
+          <span className="inline-flex items-center gap-0.5 sm:hidden">
+            <Logo size={22} className="text-fg" />
+            <span className="inline-block w-[5ch] text-left text-xs font-normal text-fg">
+              {mode === "tech" ? "Tech" : "Music"}
+            </span>
+          </span>
+          {/* 데스크톱: 일반 텍스트 흐름(flex 아님)이라 서로 다른 글자 크기도 베이스라인에 자연스럽게 정렬됨 */}
+          <span className="hidden sm:inline">Haengwoon</span>
+          <span className="hidden w-[6ch] text-left text-sm font-normal text-fg sm:inline-block">
+            {mode === "tech" ? "_Tech" : "_Music"}
           </span>
         </button>
 
