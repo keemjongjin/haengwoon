@@ -1,7 +1,10 @@
 "use client";
 
+// 트랙리스트 각 곡의 "더보기" 메뉴에서 쓰는 곡 단위 공유 버튼. ShareStoryButton(앨범용)과 짝을
+// 이루는 곡 버전 — 마찬가지로 데이터만 조립해 ShareCard에 넘긴다.
 import { ShareCard, type ShareSubject } from "./ShareCard";
 
+/** 트랙 하나를 ShareCard용 ShareSubject(typeLabel: "Song")로 변환. */
 export function TrackShareButton({
   track,
   albumArtist,

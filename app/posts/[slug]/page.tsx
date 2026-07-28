@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
-import { getAllPostSlugs, getPost } from "@/lib/posts";
-import { mdxOptions } from "@/lib/mdx";
+import { getAllPostSlugs, getPost } from "@/lib/content/posts";
+import { mdxOptions } from "@/lib/content/mdx";
 import { formatDate } from "@/lib/format";
 import { Toc } from "@/components/blog/Toc";
 import { TocFloating } from "@/components/blog/TocFloating";
 import { Comments } from "@/components/features/Comments";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 export function generateStaticParams() {
   return getAllPostSlugs().map((slug) => ({ slug }));

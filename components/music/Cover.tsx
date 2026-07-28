@@ -3,6 +3,7 @@ import Image from "next/image";
 // 앨범 커버 플레이스홀더 (실제 coverImageUrl 있으면 그걸 사용, 없으면 색블록).
 const HUES = ["#c026d3", "#dc2626", "#1d4ed8", "#0891b2", "#7c3aed", "#ea580c"];
 
+/** 앨범 커버 표시 — url이 있으면 이미지, 없으면 id로 고른 색상 배경 위에 제목 첫 글자. */
 export function Cover({
   id,
   title,

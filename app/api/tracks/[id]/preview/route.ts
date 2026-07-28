@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 // PATCH /api/tracks/:id/preview  { previewUrl }  → 미리듣기 URL 수동 지정/수정 (관리자 전용)
 // Deezer 자동 매칭이 다른 곡을 잘못 물어왔을 때 직접 바로잡거나(프록시 경로 붙여넣기), 빈 문자열로 해제.

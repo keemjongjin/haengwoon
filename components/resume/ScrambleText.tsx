@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!<>-_\\/[]{}=+*^?#";
 
-// 텍스트가 무작위 문자에서 실제 문자로 "디코딩"되는 효과.
+/** 텍스트가 무작위 문자에서 실제 문자로 "디코딩"되는 효과. /resume 페이지 연출용. */
 export function ScrambleText({
   text,
   className,

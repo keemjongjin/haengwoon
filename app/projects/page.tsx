@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllProjects } from "@/lib/projects";
+import { getAllProjects } from "@/lib/content/projects";
 
 export const metadata = { title: "Projects — Haengwoon" };
 

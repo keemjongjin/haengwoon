@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { repo } from "@/lib/db/repo";
-import { ratingColor } from "@/lib/rating";
+import { ratingColor } from "@/lib/music/rating";
 import { Cover } from "@/components/music/Cover";
-import { TrackList } from "@/components/music/TrackList";
-import { AlbumPlayToolbar } from "@/components/music/AlbumPlayToolbar";
+import { TrackList } from "@/components/music/track/TrackList";
+import { AlbumPlayToolbar } from "@/components/music/player/AlbumPlayToolbar";
 import { LikeButton } from "@/components/music/LikeButton";
-import { ShareStoryButton } from "@/components/music/ShareStoryButton";
+import { ShareStoryButton } from "@/components/music/share/ShareStoryButton";
 import { AlbumComments } from "@/components/features/AlbumComments";
 
 export async function generateMetadata({

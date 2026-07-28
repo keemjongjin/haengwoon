@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAdminToast, describeFailure } from "./AdminToastContext";
 
+/** 글 하나의 공개/숨김 토글 버튼. 클릭 즉시 PATCH하고 서버 응답 성공 시에만 로컬 상태 반영. */
 export function PostVisibilityToggle({ slug, initialHidden }: { slug: string; initialHidden: boolean }) {
   const { showError } = useAdminToast();
   const [hidden, setHidden] = useState(initialHidden);

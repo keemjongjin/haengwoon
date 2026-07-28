@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 // POST /api/tracks/favorite  { trackId }  → 최애 토글 (관리자 전용)
 export async function POST(req: Request) {

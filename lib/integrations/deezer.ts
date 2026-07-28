@@ -61,6 +61,7 @@ export async function getDeezerPreviewUrl(trackId: string): Promise<string | nul
   return data.preview;
 }
 
+/** 백필 시 Deezer API rate limit을 피하려고 트랙 사이에 넣는 지연. */
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

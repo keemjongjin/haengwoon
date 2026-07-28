@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlbumRatingCard, type AlbumCardData } from "./AlbumRatingCard";
 
+/** 검색 인덱스 한 건 — 카드 렌더용 데이터 + 수록곡 제목 목록(검색 매칭용, 카드엔 안 씀). */
 export type MusicSearchItem = AlbumCardData & { trackTitles: string[] };
 
 const PAGE_SIZE = 10;
 
 // /music/search 전용 검색 페이지. Tech의 /search와 대칭 구조 — 앨범 제목·수록곡·아티스트명 매칭.
+/** 검색어 입력 + 매칭 결과를 평점순으로 정렬한 앨범 카드 목록(페이지네이션 포함). */
 export function MusicSearch({ index }: { index: MusicSearchItem[] }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);

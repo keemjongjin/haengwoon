@@ -2,8 +2,12 @@
 
 import { useEffect, useRef } from "react";
 
-// Giscus(GitHub Discussions) 위젯. term이 있으면 모든 방문자가 같은 스레드에 모이는
-// "고정 매핑"(방명록용) — 없으면 현재 경로별 매핑(글 댓글용).
+/**
+ * Giscus(GitHub Discussions) 위젯. term이 있으면 모든 방문자가 같은 스레드에 모이는
+ * "고정 매핑"(방명록용) — 없으면 현재 경로별 매핑(글 댓글용). Tech 블로그 전용이고,
+ * Music(앨범 상세)은 대신 AlbumComments.tsx의 자체 익명 댓글 시스템을 쓴다.
+ * 필요한 env(NEXT_PUBLIC_GISCUS_*)가 없으면 위젯 대신 안내 문구만 표시.
+ */
 export function Comments({ term }: { term?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 

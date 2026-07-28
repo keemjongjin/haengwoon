@@ -1,5 +1,7 @@
 "use client";
 
+// 관리자 페이지 전용 토스트 시스템. app/admin/layout.tsx가 AdminToastProvider로 감싸고,
+// 그 하위 모든 관리자 컴포넌트가 useAdminToast()로 접근한다.
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 
 type Toast = { id: number; message: string; type: "error" | "success" };
@@ -45,6 +47,7 @@ export function AdminToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** AdminToastProvider 하위에서 성공/실패 토스트를 띄우는 훅. Provider 밖에서 쓰면 즉시 에러. */
 export function useAdminToast() {
   const ctx = useContext(AdminToastContext);
   if (!ctx) throw new Error("useAdminToast must be used within AdminToastProvider");

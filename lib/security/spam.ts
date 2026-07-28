@@ -16,6 +16,7 @@ function rateLimited(ip: string): boolean {
   return arr.length > MAX_HITS;
 }
 
+/** 댓글/방명록 등 공개 제출 폼에서 checkSpam()에 넘기는 입력값. */
 export type SpamInput = {
   content: string;
   honeypot?: string; // 숨김 필드 — 채워지면 봇
@@ -23,6 +24,10 @@ export type SpamInput = {
   ip: string;
 };
 
+/**
+ * 허니팟 → 제출 속도 → 길이/링크 수 → 금칙어 → IP 레이트리밋 순서로 검사해 스팸 여부를 판단.
+ * 앞쪽 검사에서 걸리면 뒤 단계는 실행하지 않고(early return) `reason`으로 어떤 규칙에 걸렸는지 반환.
+ */
 export function checkSpam(input: SpamInput): { ok: boolean; reason?: string } {
   const { content, honeypot, elapsedMs, ip } = input;
 

@@ -1,9 +1,12 @@
 "use client";
 
+// 인스타그램 스토리용 공유 이미지 카드. 앨범(ShareStoryButton)과 곡(TrackShareButton) 양쪽에서
+// 공통으로 쓰도록 typeLabel로 분기하는 하나의 컴포넌트로 만들어져 있다 — 두 케이스가 레이아웃은
+// 거의 같고 평점 표시 방식(앨범 RatingRing vs 곡 TrackTierStars)만 다르기 때문.
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/common/Logo";
-import { ratingColor } from "@/lib/rating";
-import { TrackTierStars } from "./TrackTierStars";
+import { ratingColor } from "@/lib/music/rating";
+import { TrackTierStars } from "../track/TrackTierStars";
 
 const HUES = ["#c026d3", "#dc2626", "#1d4ed8", "#0891b2", "#7c3aed", "#ea580c"];
 
@@ -26,6 +29,7 @@ export type ShareSubject = {
   colorSeed: number;
 };
 
+/** 앨범 평점(0~10)을 원형 프로그레스 링 + 숫자로 표시. 곡 평점(별)에는 안 쓰인다. */
 function RatingRing({ value }: { value: number }) {
   const r = 22;
   const c = 2 * Math.PI * r;
@@ -66,6 +70,7 @@ function ShareIcon() {
   );
 }
 
+/** 공유 아이콘 버튼 → 클릭 시 PNG 카드 미리보기 모달을 열고, 다운로드/공유(Web Share API) 지원. */
 export function ShareCard({ subject, triggerSize = "lg" }: { subject: ShareSubject; triggerSize?: "sm" | "lg" }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);

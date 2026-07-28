@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 
-// 기존에 쓴 장르 중에서 고르거나, 없으면 새로 추가. 자유 입력 대신 이걸 쓰면
-// "Hip-Hop"과 "hiphop"처럼 표기가 갈라져 아카이브 필터가 깨지는 걸 막을 수 있다.
+/**
+ * 기존에 쓴 장르 중에서 고르거나, 없으면 새로 추가. 자유 입력 대신 이걸 쓰면
+ * "Hip-Hop"과 "hiphop"처럼 표기가 갈라져 아카이브 필터가 깨지는 걸 막을 수 있다.
+ * 장르는 별도 테이블이 아니라 albums.genre 자유 텍스트라(lib/db/schema.ts), 여기 목록은
+ * 호출측이 넘긴 `genres`(현재 등록된 앨범들의 장르 값)로부터 매번 즉석에서 만들어진다.
+ */
 export function GenrePicker({
   genres,
   value,

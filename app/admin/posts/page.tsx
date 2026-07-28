@@ -1,4 +1,4 @@
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts } from "@/lib/content/posts";
 import { repo } from "@/lib/db/repo";
 import { PostsList } from "@/components/admin/PostsList";
 

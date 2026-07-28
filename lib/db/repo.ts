@@ -1,11 +1,13 @@
 import { and, count, desc, eq, gte, inArray, isNotNull } from "drizzle-orm";
 import { db, schema } from "./index";
-import { updateElo } from "@/lib/elo";
+import { updateElo } from "@/lib/music/elo";
 import { todayKST } from "@/lib/format";
-import type { SpotifyAlbum } from "@/lib/spotify";
+import type { SpotifyAlbum } from "@/lib/integrations/spotify";
 
 // Drizzle + Neon 기반 저장소. (구 인메모리 repo와 동일한 인터페이스, 이제 async)
 // PLAN.md §4 스키마 / DECISIONS.log 참고.
+// 이 파일의 모든 메서드는 단일 객체 `repo`의 프로퍼티로 export된다 — 라우트/서버 컴포넌트에서는
+// 항상 `import { repo } from "@/lib/db/repo"; repo.xxx(...)` 형태로 쓴다.
 
 export type AlbumRow = typeof schema.albums.$inferSelect;
 export type TrackRow = typeof schema.tracks.$inferSelect;
@@ -68,17 +70,20 @@ async function seedIfEmpty() {
   }
 }
 
+// 모든 메서드가 DB 접근 전에 이걸 거친다 — 연결 존재 확인(requireDb) + 최초 1회 시드(ensureSeeded)를 보장.
 async function withDb() {
   await ensureSeeded();
   return requireDb();
 }
 
 export const repo = {
+  /** 전체 앨범 (정렬 없음 — 정렬이 필요한 화면은 각자 필요한 순서로 다시 정렬해서 씀). */
   async listAlbums(): Promise<AlbumRow[]> {
     const dbc = await withDb();
     return dbc.select().from(schema.albums);
   },
 
+  /** 내부 숫자 ID로 앨범 한 건 조회. */
   async getAlbum(id: number): Promise<AlbumRow | undefined> {
     const dbc = await withDb();
     const rows = await dbc.select().from(schema.albums).where(eq(schema.albums.id, id));
@@ -107,6 +112,7 @@ export const repo = {
     return dbc.select().from(schema.tracks);
   },
 
+  /** 앨범 상세 페이지용 — 앨범 정보 + 수록곡 전체(트랙 번호순)를 한 번에 반환. 없으면 null. */
   async getAlbumWithTracks(id: number) {
     const dbc = await withDb();
     const album = await this.getAlbum(id);
@@ -144,6 +150,11 @@ export const repo = {
       .limit(limit);
   },
 
+  /**
+   * Spotify에서 가져온 앨범 메타를 등록(관리자 검색·등록 플로우). 이미 같은 spotifyAlbumId가
+   * 있으면 새로 만들지 않고 기존 행을 그대로 반환(중복 등록 방지). 리뷰일은 오늘(KST) 자동 지정.
+   * 트랙의 미리듣기(previewUrl)는 여기서 채우지 않는다 — 등록 후 별도 backfill 라우트가 담당.
+   */
   async addAlbumFromSpotify(album: SpotifyAlbum): Promise<AlbumRow> {
     const dbc = await withDb();
     const existing = await dbc
@@ -193,6 +204,7 @@ export const repo = {
     return row;
   },
 
+  /** 앨범 리뷰 한 줄 저장. 빈 문자열이면 null로 정리(리뷰 없음 상태). */
   async setReview(id: number, review: string): Promise<AlbumRow | undefined> {
     const dbc = await withDb();
     const [row] = await dbc
@@ -286,6 +298,7 @@ export const repo = {
     return Object.fromEntries(rows.map((t) => [t.albumId, t]));
   },
 
+  /** 앨범 월드컵용 랜덤 대진 두 장 뽑기. 등록된 앨범이 2장 미만이면 null. */
   async getMatchup(): Promise<[AlbumRow, AlbumRow] | null> {
     const albums = await this.listAlbums();
     if (albums.length < 2) return null;
@@ -295,6 +308,7 @@ export const repo = {
     return [a, b];
   },
 
+  /** 월드컵 투표 반영 — lib/music/elo.ts로 두 앨범의 Elo를 갱신하고 matches에 로그를 남긴다. */
   async vote(
     winnerId: number,
     loserId: number
@@ -322,6 +336,7 @@ export const repo = {
   },
 
   // --- 댓글 (익명, Music 전용) ---
+  /** 공개용 — 숨김 처리된 댓글은 제외하고 최신순으로 반환. */
   async listComments(targetType: string, targetId: number): Promise<CommentRow[]> {
     const dbc = await withDb();
     return dbc
@@ -337,6 +352,7 @@ export const repo = {
       .orderBy(desc(schema.comments.createdAt));
   },
 
+  /** 댓글 작성 — passwordHash는 호출측(API 라우트)에서 lib/security/hash.ts로 미리 해시해 넘긴다. */
   async addComment(data: {
     targetType: string;
     targetId: number;
@@ -349,6 +365,7 @@ export const repo = {
     return row;
   },
 
+  /** 작성자 본인 삭제 — 비밀번호 해시가 일치하는 행만 지워진다(불일치 시 false, 아무것도 안 지워짐). */
   async deleteComment(id: number, passwordHash: string): Promise<boolean> {
     const dbc = await withDb();
     const result = await dbc
@@ -382,6 +399,7 @@ export const repo = {
   },
 
   // --- 좋아요 (IP당 1회로 제한) ---
+  /** 특정 대상(앨범/글)의 좋아요 총 개수. */
   async getLikes(targetType: string, targetId: number): Promise<number> {
     const dbc = await withDb();
     const rows = await dbc
@@ -450,6 +468,7 @@ export const repo = {
   },
 
   // --- 블로그 글 노출 여부 (콘텐츠는 git, 이 테이블은 show/hide 오버레이만) ---
+  /** 숨김 처리된 글의 slug 집합 — lib/content/posts.ts의 getVisiblePosts()가 필터링에 사용. */
   async getHiddenSlugs(): Promise<Set<string>> {
     const dbc = await withDb();
     const rows = await dbc
@@ -459,6 +478,7 @@ export const repo = {
     return new Set(rows.map((r) => r.slug));
   },
 
+  /** 관리자: 글 하나의 노출/숨김 토글. 행이 없으면 새로 만들고, 있으면 upsert로 갱신. */
   async setPostHidden(slug: string, hidden: boolean): Promise<void> {
     const dbc = await withDb();
     await dbc
@@ -468,12 +488,14 @@ export const repo = {
   },
 
   // --- 스토리 공유 카드용 프로필 (싱글턴) ---
+  /** 공유 카드에 쓰는 프로필(표시 이름 + 사진). 아직 설정 전이면 기본값("Haengwoon")으로 폴백. */
   async getProfile(): Promise<{ displayName: string; photoUrl: string | null }> {
     const dbc = await withDb();
     const rows = await dbc.select().from(schema.profile).where(eq(schema.profile.id, 1));
     return rows[0] ?? { displayName: "Haengwoon", photoUrl: null };
   },
 
+  /** 관리자: 프로필 upsert. id=1 고정이라 프로필은 항상 한 행만 존재(싱글턴). */
   async setProfile(data: { displayName: string; photoUrl: string | null }): Promise<void> {
     const dbc = await withDb();
     await dbc
@@ -482,6 +504,7 @@ export const repo = {
       .onConflictDoUpdate({ target: schema.profile.id, set: data });
   },
 
+  /** 관리자 백업 다운로드용 — 모든 테이블 전체 덤프(JSON). */
   async exportAll() {
     const dbc = await withDb();
     const [albums, tracks, matches, comments, likeEvents] = await Promise.all([
@@ -494,7 +517,8 @@ export const repo = {
     return { albums, tracks, matches, comments, likeEvents };
   },
 
-  // --- 관리자 개요용 요약 통계 (블로그 글 수는 파일 기반이라 여기 포함 안 함, lib/posts.ts 참고) ---
+  // --- 관리자 개요용 요약 통계 (블로그 글 수는 파일 기반이라 여기 포함 안 함, lib/content/posts.ts 참고) ---
+  /** 관리자 대시보드 상단 숫자 카드용 — 앨범/트랙/댓글/투표 총 개수. */
   async getSummaryCounts() {
     const dbc = await withDb();
     const [albums, tracks, comments, matches] = await Promise.all([
@@ -522,11 +546,13 @@ export const repo = {
   },
 
   // --- 방문자 카운터 (자체 집계) ---
+  /** 페이지 로드 시 호출 — 경로 하나에 방문 기록 한 행 추가(집계는 getVisitStats에서). */
   async recordVisit(path: string) {
     const dbc = await withDb();
     await dbc.insert(schema.visits).values({ path });
   },
 
+  /** 관리자 대시보드용 — 오늘/이번주/전체 방문 수 + 가장 많이 본 경로 상위 5개. */
   async getVisitStats() {
     const dbc = await withDb();
     const now = new Date();

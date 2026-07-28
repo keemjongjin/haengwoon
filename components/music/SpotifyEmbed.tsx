@@ -5,8 +5,11 @@ import { useEffect, useState } from "react";
 // Spotify 트랙/앨범 ID는 22자 base62. 우리 샘플 데이터(seed-1, mock-xxx)와 구분.
 const REAL_SPOTIFY_ID = /^[A-Za-z0-9]{22}$/;
 
-// 방문자 공개 재생: Spotify 공식 Embed 위젯 사용 (OAuth·Premium 불필요, 누구나 미리듣기 가능).
-// 관리자 전용 Web Playback SDK(월드컵)와는 별개 — DECISIONS.log 참고.
+/**
+ * 방문자 공개 재생: Spotify 공식 Embed 위젯 사용 (OAuth·Premium 불필요, 누구나 미리듣기 가능).
+ * 관리자 전용 Web Playback SDK(월드컵)와는 별개 — DECISIONS.log 참고. 시드/mock 데이터처럼 실제
+ * Spotify ID가 아니면 embed 대신 안내 문구만 보여준다.
+ */
 export function SpotifyEmbed({ spotifyAlbumId }: { spotifyAlbumId: string | null }) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 

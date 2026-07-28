@@ -1,5 +1,5 @@
 import { repo } from "@/lib/db/repo";
-import { eloToScore10 } from "@/lib/elo";
+import { eloToScore10 } from "@/lib/music/elo";
 
 export const metadata = { title: "Insights — Haengwoon" };
 export const dynamic = "force-dynamic";

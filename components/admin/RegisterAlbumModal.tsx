@@ -15,7 +15,12 @@ type SearchResult = {
 
 type Track = { id: number; title: string; trackNumber: number };
 
-// 앨범 등록 흐름: ① 평점(그라데이션 슬라이더)+코멘트 → ② 최애곡 선택. Podiums "Add rating" 참고.
+/**
+ * 앨범 등록 흐름: ① 평점(그라데이션 슬라이더)+코멘트+장르 → ② 최애곡 선택. Podiums "Add rating" 참고.
+ * 1단계에서 POST /api/albums로 앨범을 실제로 등록한 뒤 평점/코멘트/장르를 이어서 저장하고,
+ * 2단계는 이미 등록된 앨범의 트랙 중 최애곡만 지정 — 등록 자체는 1단계에서 이미 끝난 상태라
+ * 2단계를 건너뛰어도(닫아도) 앨범은 남는다.
+ */
 export function RegisterAlbumModal({
   result,
   existingGenres,

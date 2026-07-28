@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 // PATCH /api/tracks/:id/comment  { comment }  → 곡별 코멘트 저장 (관리자 전용)
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

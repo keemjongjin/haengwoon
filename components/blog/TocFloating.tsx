@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { TocItem } from "@/lib/posts";
+import type { TocItem } from "@/lib/content/posts";
 
-// Velog 스타일 플로팅 TOC. 넓은 화면(xl+)에서 본문 우측에 고정, 스크롤 위치에 따라 활성 항목 하이라이트.
+/**
+ * Velog 스타일 플로팅 TOC. 넓은 화면(xl+)에서 본문 우측에 고정, IntersectionObserver로
+ * 현재 스크롤 위치의 헤딩을 감지해 활성 항목을 하이라이트. 좁은 화면은 Toc(인라인)가 대신 쓰인다.
+ */
 export function TocFloating({ items }: { items: TocItem[] }) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);

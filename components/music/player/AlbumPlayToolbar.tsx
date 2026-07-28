@@ -31,6 +31,7 @@ function ExternalLinkIcon() {
   );
 }
 
+/** 전체재생 버튼을 그리는 데 필요한 최소 트랙 정보. */
 export type ToolbarTrack = {
   id: number;
   title: string;
@@ -38,6 +39,7 @@ export type ToolbarTrack = {
 };
 
 // 전체재생 + Spotify에서 열기. size="lg"는 점수 영역, size="sm"은 수록곡 헤더 위치용 (위치·크기 맞바꿈).
+/** 앨범 상세 페이지의 "전체 재생" + "Spotify에서 열기" 버튼 묶음. */
 export function AlbumPlayToolbar({
   tracks,
   spotifyAlbumId,

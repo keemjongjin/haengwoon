@@ -1,4 +1,4 @@
-import { buildMusicSearchIndex } from "@/lib/musicSearchIndex";
+import { buildMusicSearchIndex } from "@/lib/music/musicSearchIndex";
 import { MusicSearch } from "@/components/music/MusicSearch";
 
 export const metadata = { title: "Search — Music — Haengwoon" };

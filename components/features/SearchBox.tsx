@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { SearchRecord } from "@/lib/search";
+import type { SearchRecord } from "@/lib/content/search";
 
+/** Tech 블로그 /search 페이지 — lib/content/search.ts가 만든 인덱스를 클라이언트에서 부분일치 검색. */
 export function SearchBox({ records }: { records: SearchRecord[] }) {
   const [q, setQ] = useState("");
 

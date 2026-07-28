@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 // GET /api/admin/comments → 전체 댓글(숨김 포함) 최신순 (관리자 전용)
 export async function GET() {

@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from "react";
 
 type Comment = { id: number; authorName: string; content: string; createdAt: string };
 
+/**
+ * 앨범 상세 페이지 전용 익명 댓글(Music 영역만 — Tech 블로그는 Comments.tsx의 Giscus를 씀).
+ * 이름+비밀번호로 익명 작성하고, 삭제 시 같은 비밀번호를 다시 입력해야 한다(계정 시스템 없음).
+ * 허니팟(honeypot)과 폼 체류 시간(elapsedMs)을 함께 보내 서버의 스팸 필터(lib/security/spam.ts)가
+ * 봇 여부를 판단하게 한다.
+ */
 export function AlbumComments({ albumId }: { albumId: number }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [name, setName] = useState("");

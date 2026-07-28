@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { PostMeta } from "@/lib/posts";
+import type { PostMeta } from "@/lib/content/posts";
 import { formatDate } from "@/lib/format";
 
 // 발췌형 목록 + 카테고리 필터 탭 (jeong-min.com /posts 스타일)
 const PAGE_SIZE = 5;
 
+/** Tech 블로그 /posts 목록 — 카테고리 탭 필터 + 발췌 카드 + 페이지네이션(5개씩). */
 export function PostList({
   posts,
   categories,

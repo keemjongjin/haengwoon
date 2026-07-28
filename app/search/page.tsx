@@ -1,4 +1,4 @@
-import { getSearchRecords } from "@/lib/search";
+import { getSearchRecords } from "@/lib/content/search";
 import { SearchBox } from "@/components/features/SearchBox";
 
 export const metadata = { title: "Search — Haengwoon" };

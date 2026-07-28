@@ -33,6 +33,7 @@ function VolumeIcon() {
 
 // 캡슐형 플로팅 재생바. Music 영역(/music, /artist)에서만 보이고 그 외에선 사라짐 +
 // 재생 중 다른 곳으로 나가면 자동 정지. 곡이 없을 땐 정보 영역 중앙에 클로버 로고를 idle 상태로 표시.
+/** app/layout.tsx에 항상 마운트돼있는 화면 하단 고정 미니 플레이어. 라우트에 따라 스스로 보임/숨김을 결정. */
 export function NowPlayingBar() {
   const pathname = usePathname();
   const inMusicMode =

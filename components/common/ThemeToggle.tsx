@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-// 인라인 다크모드 토글. 헤더의 일반 flex 아이템으로 동작 — 공간이 부족하면
-// (position:fixed가 아니라) 자연스럽게 다음 줄로 줄바꿈된다.
+/**
+ * 인라인 다크모드 토글. 헤더의 일반 flex 아이템으로 동작 — 공간이 부족하면
+ * (position:fixed가 아니라) 자연스럽게 다음 줄로 줄바꿈된다. 선택한 테마는 localStorage에
+ * 저장하고 document.documentElement에 data-theme로 반영(ThemeScript가 다음 방문 시 미리 읽어감).
+ */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 

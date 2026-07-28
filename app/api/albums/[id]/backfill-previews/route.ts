@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
-import { matchDeezerTrackId, deezerProxyUrl, sleep } from "@/lib/deezer";
+import { isAdmin } from "@/lib/security/auth";
+import { matchDeezerTrackId, deezerProxyUrl, sleep } from "@/lib/integrations/deezer";
 
 // Deezer는 rate limit이 여유로워(50req/5s) 곡 사이 짧은 간격이면 충분 — 타임아웃 여유만 살짝.
 export const maxDuration = 30;

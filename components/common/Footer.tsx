@@ -8,6 +8,7 @@ const LINKS = [
   { label: "admin", href: "/admin" },
 ];
 
+/** app/layout.tsx 최하단 고정 — 소셜 링크 + 관리자 진입 링크 + 저작권 표시. */
 export function Footer() {
   return (
     <footer className="mt-auto border-t border-line text-xs text-mut sm:text-sm">

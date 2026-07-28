@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 // GET /api/profile → 스토리 공유 카드에 쓰는 프로필 (공개, 이름/사진 URL만)
 export async function GET() {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkAdminKey, issueToken, isAdmin, AUTH_COOKIE } from "@/lib/auth";
+import { checkAdminKey, issueToken, isAdmin, AUTH_COOKIE } from "@/lib/security/auth";
 
 // GET /api/auth → 현재 관리자 인증 여부 확인 (AdminGate에서 사용)
 export async function GET() {

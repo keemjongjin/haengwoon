@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useAudioPlayer } from "./AudioPlayerContext";
-import { TrackShareButton } from "./TrackShareButton";
+import { useAudioPlayer } from "../player/AudioPlayerContext";
+import { TrackShareButton } from "../share/TrackShareButton";
 import { TrackTierStars } from "./TrackTierStars";
 
+/** 앨범 상세 페이지 트랙 목록 한 행에 필요한 데이터. */
 export type Track = {
   id: number;
   title: string;
@@ -50,8 +51,10 @@ function MoreIcon() {
   );
 }
 
-// 수록곡 목록. 재생은 전역 재생바(AudioPlayerContext) 공유 — 한 번에 한 곡만 재생.
-// 최애(별) 표시는 읽기 전용(변경은 관리자 페이지에서만), 더보기(⋯)에서 코멘트+곡 공유.
+/**
+ * 앨범 상세 페이지의 수록곡 목록. 재생은 전역 재생바(AudioPlayerContext) 공유 — 한 번에 한 곡만 재생.
+ * 최애/평점 표시는 읽기 전용(변경은 관리자 페이지에서만), 더보기(⋯)에서 코멘트 + 곡 공유 버튼.
+ */
 export function TrackList({
   tracks,
   albumArtist,

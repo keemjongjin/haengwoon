@@ -11,6 +11,7 @@ const TABS = [
   { href: "/admin/profile", label: "Profile" },
 ];
 
+/** 관리자 페이지 상단 탭(Overview/Posts/Music/Comments/Profile) + 로그아웃 버튼. */
 export function AdminNav({ onLogout }: { onLogout: () => void }) {
   const pathname = usePathname();
 

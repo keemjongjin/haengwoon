@@ -4,10 +4,12 @@ import { useMemo, useState } from "react";
 import { formatDate } from "@/lib/format";
 import { PostVisibilityToggle } from "./PostVisibilityToggle";
 
+/** PostsList 한 행에 필요한 최소 글 정보. */
 export type PostListItem = { slug: string; title: string; category: string; pubDate: string };
 
 const PAGE_SIZE = 10;
 
+/** 관리자 Posts 탭 — 검색 + 페이지네이션 + 글별 공개/숨김 토글(PostVisibilityToggle) 목록. */
 export function PostsList({ posts, hiddenSlugs }: { posts: PostListItem[]; hiddenSlugs: string[] }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);

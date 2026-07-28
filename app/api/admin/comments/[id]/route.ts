@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 // PATCH /api/admin/comments/:id  { isHidden }  → 숨김/숨김해제 (관리자 전용)
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

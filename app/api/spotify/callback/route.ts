@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
-import { exchangeSpotifyCode, SPOTIFY_STATE_COOKIE } from "@/lib/spotify";
-import { isAdmin } from "@/lib/auth";
+import { exchangeSpotifyCode, SPOTIFY_STATE_COOKIE } from "@/lib/integrations/spotify";
+import { isAdmin } from "@/lib/security/auth";
 
 function escapeHtml(s: string): string {
   return s

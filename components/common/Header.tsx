@@ -20,6 +20,11 @@ const NAV = {
   ],
 } as const;
 
+/**
+ * 전역 상단 헤더. 이 사이트는 "Tech"와 "Music" 두 세계를 경로로 구분하는 컨셉이라(app/layout.tsx),
+ * 헤더가 현재 경로를 보고 mode를 판단해 다른 네비게이션(NAV)을 보여주고 `data-mode`를
+ * document에 심어 CSS 팔레트도 함께 바꾼다. 로고 클릭 시 반대 세계로 이동.
+ */
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();

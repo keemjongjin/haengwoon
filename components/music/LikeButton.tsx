@@ -1,7 +1,11 @@
 "use client";
 
+// IP 기준 좋아요 버튼(계정 없이도 동작). 서버는 (targetType,targetId,ip) 유니크 제약으로
+// IP당 1회만 허용하고(lib/db/schema.ts likeEvents), 여기서는 클릭 즉시 낙관적으로 UI를 갱신한 뒤
+// 실패하면 롤백한다.
 import { useEffect, useState } from "react";
 
+/** 앨범 좋아요 토글 버튼. variant="pill"은 카운트+테두리가 있는 일반형, "minimal"은 하트+숫자만. */
 export function LikeButton({
   albumId,
   size = "lg",

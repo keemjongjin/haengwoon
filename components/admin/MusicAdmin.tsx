@@ -1,10 +1,14 @@
 "use client";
 
+// /admin/music 페이지 전체를 이루는 단일 대형 클라이언트 컴포넌트. 앨범 검색·등록, 월드컵 투표,
+// 앨범 목록 관리(평점/장르/리뷰 수정·삭제), 수록곡 관리(평점/최애곡/코멘트/미리듣기)까지
+// 한 화면 안에서 전부 처리한다 — 섹션이 많아 보여도 각 섹션은 독립적인 상태+API 호출 묶음이라
+// 서로 거의 얽혀있지 않다(공유하는 건 loadStandings로 갱신되는 standings뿐).
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Cover } from "@/components/music/Cover";
 import { SpotifyEmbed } from "@/components/music/SpotifyEmbed";
-import { TrackTierStars } from "@/components/music/TrackTierStars";
+import { TrackTierStars } from "@/components/music/track/TrackTierStars";
 import { GenrePicker } from "./GenrePicker";
 import { RegisterAlbumModal } from "./RegisterAlbumModal";
 import { useAdminToast, describeFailure } from "./AdminToastContext";
@@ -49,6 +53,7 @@ type SearchResult = {
   releaseDate: string;
 };
 
+/** /admin/music 페이지 본문 — 관리자 인증(AdminGate)을 통과한 뒤에만 렌더된다. */
 export function MusicAdmin() {
   const { showError, showSuccess } = useAdminToast();
 
@@ -103,6 +108,7 @@ export function MusicAdmin() {
     loadMatch();
   }, [loadStandings, loadMatch]);
 
+  /** 월드컵 대결 결과 반영 — 서버가 Elo를 갱신한 뒤, 순위 목록과 다음 대진을 둘 다 새로고침. */
   async function vote(winnerId: number, loserId: number) {
     const res = await fetch("/api/match/vote", {
       method: "POST",
@@ -172,6 +178,7 @@ export function MusicAdmin() {
     }
   }
 
+  /** "수록곡 관리" 아코디언 펼치기/닫기. 트랙 목록은 최초로 펼칠 때 한 번만 불러와 캐싱한다. */
   async function toggleExpand(id: number) {
     if (expandedId === id) {
       setExpandedId(null);
@@ -328,6 +335,7 @@ export function MusicAdmin() {
     }
   }
 
+  /** 상단 검색창 — Spotify 앨범 검색(POST 아님, 등록 전 미리보기만). 등록은 결과 목록의 "등록" 버튼에서. */
   async function search() {
     setSearching(true);
     try {

@@ -1,5 +1,7 @@
 "use client";
 
+// 앨범 상세 페이지의 "앨범 공유" 버튼. 트랙 목록에서 최애곡을 찾아 ShareCard에 전달만 하고,
+// 실제 카드 렌더링·PNG 생성은 전부 ShareCard가 담당한다(이 파일은 데이터 조립까지만).
 import { ShareCard, type ShareSubject } from "./ShareCard";
 
 type Track = {
@@ -10,6 +12,7 @@ type Track = {
   manualRating: number | null;
 };
 
+/** 앨범 + 수록곡 목록을 받아 최애곡을 찾고 ShareCard용 ShareSubject(typeLabel: "Album")로 변환. */
 export function ShareStoryButton({
   album,
   tracks,

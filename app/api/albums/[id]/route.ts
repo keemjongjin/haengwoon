@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 // GET /api/albums/:id → 앨범 + 수록곡 (관리자 패널의 곡별 평점 편집용)
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {

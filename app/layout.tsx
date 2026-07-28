@@ -5,8 +5,8 @@ import { ThemeScript } from "@/components/common/ThemeScript";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { VisitorPing } from "@/components/common/VisitorPing";
-import { AudioPlayerProvider } from "@/components/music/AudioPlayerContext";
-import { NowPlayingBar } from "@/components/music/NowPlayingBar";
+import { AudioPlayerProvider } from "@/components/music/player/AudioPlayerContext";
+import { NowPlayingBar } from "@/components/music/player/NowPlayingBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

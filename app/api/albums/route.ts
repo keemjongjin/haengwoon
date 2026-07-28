@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { spotify } from "@/lib/spotify";
-import { isAdmin } from "@/lib/auth";
-import { eloToScore10 } from "@/lib/elo";
+import { spotify } from "@/lib/integrations/spotify";
+import { isAdmin } from "@/lib/security/auth";
+import { eloToScore10 } from "@/lib/music/elo";
 
 // 등록은 Spotify 메타데이터만 저장해 빠르게 끝난다(미리듣기는 등록 후 backfill로 채움).
 // Spotify API 응답이 느릴 때를 대비해 기본 타임아웃(10s)보다 약간의 여유만 둔다.

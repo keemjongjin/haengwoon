@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
-import { searchDeezerTracks } from "@/lib/deezer";
+import { isAdmin } from "@/lib/security/auth";
+import { searchDeezerTracks } from "@/lib/integrations/deezer";
 
 // GET /api/deezer/search?term=... → Deezer 검색 프록시 (관리자 전용).
 // 자동 매칭이 틀린 트랙의 미리듣기를 관리자가 직접 찾아 고를 때 사용.

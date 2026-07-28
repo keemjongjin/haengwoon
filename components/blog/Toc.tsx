@@ -1,6 +1,6 @@
-import type { TocItem } from "@/lib/posts";
+import type { TocItem } from "@/lib/content/posts";
 
-// 글 목차 (ToC). 헤딩 앵커로 이동.
+/** 글 목차(ToC) — 좁은 화면(xl 미만)용 인라인 버전. 넓은 화면은 TocFloating이 대신 뜬다. */
 export function Toc({ items }: { items: TocItem[] }) {
   if (items.length === 0) return null;
   return (

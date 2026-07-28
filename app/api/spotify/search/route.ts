@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
-import { spotify } from "@/lib/spotify";
+import { isAdmin } from "@/lib/security/auth";
+import { spotify } from "@/lib/integrations/spotify";
 
 // GET /api/spotify/search?q=... → 앨범 검색 (관리자 전용, 등록 전 미리보기)
 export async function GET(req: Request) {

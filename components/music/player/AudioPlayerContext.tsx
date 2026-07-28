@@ -1,7 +1,11 @@
 "use client";
 
+// 앱 전체에서 공유하는 단일 오디오 재생 컨텍스트. `<audio>` 엘리먼트를 하나만 만들어(ensureAudio)
+// 어느 화면에서 재생을 걸든 항상 그 인스턴스를 재사용 — 그래서 "한 번에 한 곡만 재생"이 자동으로
+// 보장된다(트랙 목록/앨범 전체재생/최애곡 미리듣기 등 어디서 걸어도 이전 재생은 자연히 멈춤).
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
+/** 재생 중(혹은 재생 대상)인 곡 하나의 최소 정보. previewUrl은 `<audio src>`로 그대로 들어간다. */
 export type NowPlayingTrack = {
   id: number;
   title: string;
@@ -24,6 +28,7 @@ type AudioPlayerContextValue = {
 
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
 
+/** app/layout.tsx에서 트리 최상단을 감싸는 프로바이더 — Music 관련 페이지 전역에 재생 상태를 공급. */
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentRef = useRef<NowPlayingTrack | null>(null);
@@ -121,6 +126,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** AudioPlayerProvider 하위 어디서든 현재 재생 상태·조작 함수를 꺼내 쓰는 훅. Provider 밖에서 쓰면 즉시 에러. */
 export function useAudioPlayer() {
   const ctx = useContext(AudioPlayerContext);
   if (!ctx) throw new Error("useAudioPlayer must be used within AudioPlayerProvider");

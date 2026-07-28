@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { hashPassword } from "@/lib/hash";
-import { checkSpam } from "@/lib/spam";
+import { hashPassword } from "@/lib/security/hash";
+import { checkSpam } from "@/lib/security/spam";
 
 function clientIp(req: Request): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";

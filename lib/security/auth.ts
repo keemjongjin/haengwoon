@@ -8,12 +8,15 @@ if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
   throw new Error("JWT_SECRET 환경변수가 설정되지 않았습니다. 배포 환경에서는 필수입니다.");
 }
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret");
+/** 관리자 세션 JWT를 담는 httpOnly 쿠키 이름. */
 export const AUTH_COOKIE = "admin_token";
 
+/** 로그인 폼에서 입력한 값이 관리자 단일 패스워드(ADMIN_KEY)와 일치하는지 확인. */
 export function checkAdminKey(key: string): boolean {
   return Boolean(process.env.ADMIN_KEY) && key === process.env.ADMIN_KEY;
 }
 
+/** 로그인 성공 시 발급하는 관리자 JWT(7일 만료). */
 export async function issueToken(): Promise<string> {
   return new SignJWT({ role: "admin" })
     .setProtectedHeader({ alg: "HS256" })
@@ -22,6 +25,7 @@ export async function issueToken(): Promise<string> {
     .sign(secret);
 }
 
+/** 쿠키에서 꺼낸 토큰이 유효한 관리자 JWT인지 검증(서명·만료·role 클레임 확인). */
 export async function verifyToken(token: string | undefined): Promise<boolean> {
   if (!token) return false;
   try {

@@ -1,8 +1,10 @@
 // Spotify 어댑터. 키(env) 없으면 mock으로 동작 → 키 확보 후 env만 채우면 실연동.
 // PLAN.md §5.5. 앨범 메타(client credentials) + 재생(SDK, refresh token) 은 별개 자격증명.
 
+/** 관리자 전용 SDK 재생에 쓰는 사용자 액세스 토큰. mock=true면 실제 재생은 불가능(개발용). */
 export type PlaybackToken = { accessToken: string; expiresAt: number; mock: boolean };
 
+/** Spotify 앨범 하나에 속한 트랙 메타데이터. previewUrl은 여기서는 항상 비워둠(아래 getAlbum 참고). */
 export type SpotifyTrack = {
   spotifyTrackId: string;
   title: string;
@@ -11,6 +13,7 @@ export type SpotifyTrack = {
   previewUrl?: string | null; // Spotify 정책상 많은 트랙에서 null일 수 있음
 };
 
+/** repo.addAlbumFromSpotify()에 그대로 넘겨 DB에 저장하는 앨범 메타데이터 형태. */
 export type SpotifyAlbum = {
   spotifyAlbumId: string;
   title: string;
@@ -22,6 +25,7 @@ export type SpotifyAlbum = {
   tracks: SpotifyTrack[];
 };
 
+/** 실제 Spotify Web API 어댑터와 mock 어댑터가 공통으로 구현하는 인터페이스. */
 export interface SpotifyAdapter {
   isConfigured(): boolean;
   getPlaybackToken(): Promise<PlaybackToken>;
@@ -30,10 +34,12 @@ export interface SpotifyAdapter {
 }
 
 // 메타데이터(검색·조회) = Client ID/Secret만 있으면 됨.
+/** 앨범 검색·조회에 필요한 최소 자격증명(Client Credentials)이 설정돼 있는지. */
 export function hasClientCreds() {
   return Boolean(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET);
 }
 // 재생(SDK) = 그 위에 관리자 본인 계정 refresh token까지 필요.
+/** 관리자 SDK 재생까지 가능한지 — Client Credentials에 더해 refresh token까지 있어야 함. */
 export function hasPlaybackCreds() {
   return hasClientCreds() && Boolean(process.env.SPOTIFY_REFRESH_TOKEN);
 }
@@ -214,10 +220,12 @@ const realAdapter: SpotifyAdapter = {
   },
 };
 
+/** 앱 전역에서 쓰는 어댑터 인스턴스 — env 키가 없으면 자동으로 mock으로 폴백된다. */
 export const spotify: SpotifyAdapter = hasClientCreds() ? realAdapter : mockAdapter;
 
 // --- 관리자 1인 OAuth (Authorization Code Flow) — refresh token 발급용 ---
 // 방문자 재생은 SpotifyEmbed(공개 위젯)가 담당하므로 이 플로우는 관리자 전용 SDK 재생에만 쓰인다.
+/** OAuth 인가 시 요청하는 권한 범위 — 관리자 SDK 재생/제어에 필요한 것만 최소로. */
 export const SPOTIFY_AUTH_SCOPES = [
   "streaming",
   "user-read-email",
@@ -226,12 +234,15 @@ export const SPOTIFY_AUTH_SCOPES = [
   "user-read-playback-state",
 ].join(" ");
 
+/** OAuth CSRF 방지용 state 값을 담아두는 httpOnly 쿠키 이름. */
 export const SPOTIFY_STATE_COOKIE = "spotify_oauth_state";
 
+/** OAuth 콜백을 받을 URI. 배포 환경 값이 없으면 로컬 개발 기본값으로 폴백. */
 export function getSpotifyRedirectUri(): string {
   return process.env.SPOTIFY_REDIRECT_URI || "http://127.0.0.1:3000/api/spotify/callback";
 }
 
+/** 관리자를 Spotify 로그인 화면으로 보내는 URL 생성. `state`는 콜백에서 반드시 검증해야 함(CSRF). */
 export function buildSpotifyAuthorizeUrl(state: string): string {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   if (!clientId) throw new Error("SPOTIFY_CLIENT_ID가 설정되지 않았습니다.");
@@ -245,6 +256,7 @@ export function buildSpotifyAuthorizeUrl(state: string): string {
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
 }
 
+/** 콜백에서 받은 인가 코드를 access/refresh token으로 교환. refresh_token은 env에 영구 저장해서 재사용. */
 export async function exchangeSpotifyCode(
   code: string
 ): Promise<{ access_token: string; refresh_token: string; expires_in: number }> {

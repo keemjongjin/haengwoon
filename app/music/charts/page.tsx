@@ -1,5 +1,5 @@
 import { repo } from "@/lib/db/repo";
-import { eloToScore10 } from "@/lib/elo";
+import { eloToScore10 } from "@/lib/music/elo";
 import { ChartsFilters } from "@/components/music/ChartsFilters";
 
 export const metadata = { title: "Charts — Haengwoon" };

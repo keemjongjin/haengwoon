@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
-import { getAllPosts } from "@/lib/posts";
+import { isAdmin } from "@/lib/security/auth";
+import { getAllPosts } from "@/lib/content/posts";
 
 // GET /api/admin/stats → Overview 대시보드용 요약 통계 (관리자 전용)
 export async function GET() {

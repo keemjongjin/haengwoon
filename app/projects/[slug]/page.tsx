@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
-import { getAllProjectSlugs, getProject } from "@/lib/projects";
-import { mdxOptions } from "@/lib/mdx";
+import { getAllProjectSlugs, getProject } from "@/lib/content/projects";
+import { mdxOptions } from "@/lib/content/mdx";
 import { formatDate } from "@/lib/format";
 
 export function generateStaticParams() {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { isAdmin } from "@/lib/auth";
-import { buildSpotifyAuthorizeUrl, SPOTIFY_STATE_COOKIE } from "@/lib/spotify";
+import { isAdmin } from "@/lib/security/auth";
+import { buildSpotifyAuthorizeUrl, SPOTIFY_STATE_COOKIE } from "@/lib/integrations/spotify";
 
 // GET /api/spotify/authorize → 관리자 본인 Spotify 계정 인증 시작 (재생용 refresh token 발급)
 // CSRF 방지용 state를 발급해 짧은 유효시간의 쿠키로 저장하고, 콜백에서 대조 확인.

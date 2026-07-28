@@ -1,4 +1,4 @@
-import { getDeezerPreviewUrl } from "@/lib/deezer";
+import { getDeezerPreviewUrl } from "@/lib/integrations/deezer";
 
 // GET /api/deezer-preview/:id → Deezer 트랙 ID로 지금 유효한 미리듣기 URL을 받아 302 리다이렉트.
 // Deezer 미리듣기 URL은 ~15분 만료라 저장할 수 없으므로, <audio src>는 이 안정적인 주소를 가리키고

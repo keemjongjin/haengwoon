@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useAudioPlayer } from "./AudioPlayerContext";
+import { useAudioPlayer } from "./player/AudioPlayerContext";
 import { NoteIcon } from "./NoteIcon";
-import { ratingColor } from "@/lib/rating";
+import { ratingColor } from "@/lib/music/rating";
 import { LikeButton } from "./LikeButton";
 
 const HUES = ["#c026d3", "#dc2626", "#1d4ed8", "#0891b2", "#7c3aed", "#ea580c"];
@@ -15,6 +15,7 @@ const TYPE_LABEL: Record<string, string> = {
   compilation: "Compilation",
 };
 
+/** AlbumRatingCard 렌더에 필요한 최소 앨범 데이터 — Archive/Charts/Search/artist 페이지가 공유. */
 export type AlbumCardData = {
   id: number;
   spotifyAlbumId?: string | null;
@@ -77,9 +78,12 @@ function PauseIcon() {
   );
 }
 
-// 모던 카드형 앨범 UI — 프로스티드 글래스 배경 + 원형 프로그레스 평점 링 + FAVORITE SONG.
-// 앨범 상세 링크와 아티스트 링크가 중첩되지 않도록(유효 HTML) 영역별로 개별 Link 사용.
-// 최애곡 재생은 전역 재생바(AudioPlayerContext) 공유 — 한 번에 한 곡만 재생.
+/**
+ * 모던 카드형 앨범 UI — 프로스티드 글래스 배경 + 원형 프로그레스 평점 링 + FAVORITE SONG.
+ * 앨범 상세 링크와 아티스트 링크가 중첩되지 않도록(유효 HTML) 영역별로 개별 Link 사용.
+ * 최애곡 재생은 전역 재생바(AudioPlayerContext) 공유 — 한 번에 한 곡만 재생.
+ * Archive/Charts/Search/artist 페이지의 앨범 리스트가 전부 이 카드를 재사용한다.
+ */
 export function AlbumRatingCard({ album }: { album: AlbumCardData }) {
   const { current, isPlaying, play } = useAudioPlayer();
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
-import { hasClientCreds, hasPlaybackCreds, spotify } from "@/lib/spotify";
+import { isAdmin } from "@/lib/security/auth";
+import { hasClientCreds, hasPlaybackCreds, spotify } from "@/lib/integrations/spotify";
 
 // GET /api/admin/spotify-status → Spotify 연결 상태를 실제로 검증(관리자 전용, 클릭 시에만 호출)
 export async function GET() {

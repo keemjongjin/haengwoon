@@ -1,6 +1,6 @@
 "use client";
 
-import { useAudioPlayer } from "./AudioPlayerContext";
+import { useAudioPlayer } from "./player/AudioPlayerContext";
 import { NoteIcon } from "./NoteIcon";
 
 // 재생 중임을 보여주는 사운드 웨이브 (CSS 애니메이션, 외부 라이브러리 없음)
@@ -26,6 +26,7 @@ function SoundWave() {
   );
 }
 
+/** Music 홈 히어로에 표시하는 최애곡 pill — 지금 그 곡이 재생 중이면 사운드 웨이브 애니메이션 표시. */
 export function HeroFavoriteTrack({ id, title }: { id: number; title: string }) {
   const { current, isPlaying } = useAudioPlayer();
   const playing = current?.id === id && isPlaying;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getVisiblePosts } from "@/lib/posts";
+import { getVisiblePosts } from "@/lib/content/posts";
 import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic"; // 숨김 여부는 DB 조회 → 매 요청 최신화

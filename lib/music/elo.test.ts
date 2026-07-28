@@ -1,3 +1,4 @@
+// elo.ts 단위 테스트. `npm test`(vitest)로 실행.
 import { describe, it, expect } from "vitest";
 import { expectedScore, updateElo, eloToScore10, DEFAULT_ELO } from "./elo";
 

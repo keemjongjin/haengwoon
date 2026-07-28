@@ -1,4 +1,4 @@
-import { getVisiblePosts, getCategories } from "@/lib/posts";
+import { getVisiblePosts, getCategories } from "@/lib/content/posts";
 import { PostList } from "@/components/blog/PostList";
 
 export const metadata = { title: "Posts — Haengwoon" };

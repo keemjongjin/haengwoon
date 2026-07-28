@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { repo } from "@/lib/db/repo";
-import { isAdmin } from "@/lib/auth";
+import { isAdmin } from "@/lib/security/auth";
 
 // GET /api/admin/posts/visibility → 슬러그별 숨김 여부 (관리자 전용)
 export async function GET() {

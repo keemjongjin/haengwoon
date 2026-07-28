@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdminNav } from "./AdminNav";
 
-// 통합 관리자 인증 게이트. /admin/* 전체가 이 안에서 렌더됨(app/admin/layout.tsx).
+/**
+ * 통합 관리자 인증 게이트. /admin/* 전체가 이 안에서 렌더됨(app/admin/layout.tsx).
+ * 로그인 여부를 서버에 물어보고(GET /api/auth), 안 됐으면 ADMIN_KEY 입력 폼을,
+ * 됐으면 상단 탭(AdminNav)과 실제 페이지 내용을 보여준다.
+ */
 export function AdminGate({ children }: { children: React.ReactNode }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [key, setKey] = useState("");

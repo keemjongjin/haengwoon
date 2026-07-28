@@ -1,8 +1,11 @@
 "use client";
 
+// /music/archive 페이지 본체. 정렬 기준(리뷰일/발매일/평점/좋아요)·연도·장르 필터와 페이지네이션을
+// 클라이언트에서 전부 처리 — 앨범 수가 적어(수백 장 이하) 서버 페이지네이션 없이도 충분하다.
 import { useMemo, useState } from "react";
 import { AlbumRatingCard } from "./AlbumRatingCard";
 
+/** ArchiveFilters에 넘기는 앨범 데이터 — AlbumCardData에 필터링용 필드(genre/reviewDate 등)를 더함. */
 export type ArchiveAlbum = {
   id: number;
   spotifyAlbumId?: string | null;
@@ -32,6 +35,7 @@ function yearOf(d: string | null): string {
   return d ? d.slice(0, 4) : "?";
 }
 
+/** 정렬 기준·연도·장르 필터 툴바 + 필터링된 앨범 카드 목록(페이지네이션 포함). */
 export function ArchiveFilters({
   albums,
   initialGenre,

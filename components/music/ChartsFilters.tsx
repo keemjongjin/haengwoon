@@ -1,8 +1,12 @@
 "use client";
 
+// /music/charts 페이지 본체. "평점 랭킹"과 "취향 대결(Elo)" 두 탭을 전환하면서 같은 카드 컴포넌트를
+// 재사용 — Elo 탭에서는 표시용으로 eloScore10을 manualRating 자리에 끼워 넣어(아래 .map 참고)
+// AlbumRatingCard가 두 지표를 구분할 필요 없이 그대로 렌더링하게 만든다.
 import { useMemo, useState } from "react";
 import { AlbumRatingCard } from "./AlbumRatingCard";
 
+/** ChartsFilters에 넘기는 앨범 데이터 — 평점(manualRating)과 Elo(eloScore10)를 둘 다 들고 있다. */
 export type ChartAlbum = {
   id: number;
   spotifyAlbumId: string | null;
@@ -24,6 +28,7 @@ function yearOf(d: string | null): string {
   return d ? d.slice(0, 4) : "?";
 }
 
+/** 평점/Elo 탭 전환 + 연도 필터 + 순위 매긴 앨범 카드 목록(페이지네이션 포함). */
 export function ChartsFilters({ albums }: { albums: ChartAlbum[] }) {
   const [tab, setTab] = useState<Tab>("rating");
   const [year, setYear] = useState("전체");

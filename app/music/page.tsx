@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { repo } from "@/lib/db/repo";
-import { ratingColor } from "@/lib/rating";
+import { ratingColor } from "@/lib/music/rating";
 import { Cover } from "@/components/music/Cover";
 import { AlbumRatingCard } from "@/components/music/AlbumRatingCard";
 import { HeroFavoriteTrack } from "@/components/music/HeroFavoriteTrack";
