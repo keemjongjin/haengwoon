@@ -24,6 +24,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       artist: data.album.artist,
       coverImageUrl: data.album.coverImageUrl,
       review: data.album.review,
+      // 플레이어에서 도는 판의 색·무늬 (없으면 기본 검정판)
+      lpColor: data.album.lpColor,
+      lpPattern: data.album.lpPattern,
     },
     tracks: data.tracks.map((t) => ({
       id: t.id,

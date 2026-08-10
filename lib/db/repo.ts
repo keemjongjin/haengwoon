@@ -193,7 +193,13 @@ export const repo = {
   /** 관리자: 앨범 기본 정보 수정(제목/아티스트/장르) */
   async updateAlbumMeta(
     id: number,
-    data: { title?: string; artist?: string; genre?: string | null }
+    data: {
+      title?: string;
+      artist?: string;
+      genre?: string | null;
+      lpColor?: string | null;
+      lpPattern?: string | null;
+    }
   ): Promise<AlbumRow | undefined> {
     const dbc = await withDb();
     const [row] = await dbc.update(schema.albums).set(data).where(eq(schema.albums.id, id)).returning();

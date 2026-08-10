@@ -27,9 +27,15 @@ import { useCoverColor } from "./useCoverColor";
 const MONTH_ABBR = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
 /** 케이스 크기(px). 3D 면 배치 계산에 쓰이므로 CSS 클래스가 아니라 상수로 고정한다. */
-const BOX = 224;
+const BOX = 299;
 /** 케이스 두께(px). 스파인 글자가 들어갈 최소치는 유지 — 더 줄이면 세로 제목이 잘린다. */
 const DEPTH = 15;
+/**
+ * 가운데에서 3장 이상 떨어진 카드를 한 단계마다 추가로 끌어당기는 양(px).
+ * 이 값이 0이면 그 구간은 자연 피치(BOX+gap)로 벌어진다. 실측한 그 구간의 틈을
+ * 절반으로 줄이는 값이라 = 기존 틈 / 2 (아래 shiftX 계산부 주석 참고).
+ */
+const OUTER_STEP = 108;
 
 /** "2026-08" → { year: "2026", month: "AUG" } */
 function splitMonthLabel(yearMonth: string): { year: string; month: string } {
@@ -130,7 +136,7 @@ function AlbumCase({
             src={album.coverImageUrl}
             alt={album.title}
             fill
-            sizes="224px"
+            sizes="300px"
             className="object-cover"
             priority={priority}
           />
@@ -294,8 +300,17 @@ export function MonthlyPicks({
             //   기존 배수(68·136)일 때 틈 → 가운데↔1번째 13px, 1번째↔2번째 94px
             //   목표 → 가운데↔1번째 20px(조금 더 넓게), 1번째↔2번째 62px(기존의 2/3)
             // 당길 양을 1px 늘리면 그 카드가 1px 안쪽으로 붙는다는 관계로 역산 → 61 / 162.
-            const PULL = [0, 61, 162];
-            const shiftX = -Math.sign(clamped) * PULL[Math.abs(clamped)];
+            //
+            // 3단계 밖(가운데에서 3장 이상 떨어진 카드)은 회전·크기가 2단계와 같아서 예전엔
+            // 당김도 162로 고정했는데, 그러면 그 구간만 카드 간격이 자연 피치(BOX+gap)로 벌어져
+            // "가운데 근처만 촘촘하고 양 끝은 헐렁한" 진열대가 된다. 단계마다 OUTER_STEP만큼
+            // 더 당겨 끝까지 같은 밀도로 이어지게 한다.
+            // BOX를 1/3 키우면 자연 피치도 228→303으로 늘어나므로, 앞서 맞춰둔 근접 간격
+            // (가운데↔1번째 21px, 1번째↔2번째 63px)을 지키려면 당김 값도 함께 키워야 한다.
+            const PULL = [0, 82, 209];
+            const dist = Math.abs(offset);
+            const pull = dist <= 2 ? PULL[dist] : PULL[2] + (dist - 2) * OUTER_STEP;
+            const shiftX = -Math.sign(offset) * pull;
             return (
               <div key={a.id} className="relative shrink-0 snap-center" style={{ width: BOX, zIndex: 10 - Math.abs(clamped) }}>
                 <button
@@ -312,12 +327,17 @@ export function MonthlyPicks({
                       });
                   }}
                   aria-label={isActive ? `${a.title} 재생하기` : `${a.title} — ${a.artist} 가운데로`}
-                  className="block cursor-pointer transition-[opacity,filter] duration-500 ease-out"
+                  className="block cursor-pointer transition-[opacity,filter,transform] duration-500 ease-out"
                   style={{
                     // 흐리게/어둡게는 반드시 여기(회전하지 않는 바깥층)에서 — 회전하는 요소에 걸면
                     // preserve-3d가 무효화돼 케이스가 도로 납작해진다.
                     opacity,
                     filter: isActive ? "none" : "brightness(0.82)",
+                    // ★ 가로 이동도 여기(원근 바깥)에서 한다. 원근 안에서 translateX를 걸면
+                    //   카드가 자기 소실점에서 멀어질수록 투영이 찌그러진다 — 실제로 바깥 카드
+                    //   폭이 67px에서 13px까지 뭉개졌다. 밖에서 옮기면 각 카드는 정면에서 본
+                    //   모습 그대로 유지된 채 위치만 이동한다.
+                    transform: `translateX(${shiftX}px)`,
                     // 기울어 뒤로 물러난 카드가 가운데 카드 뒤로 깔리도록 쌓임 순서 지정
                     zIndex: 10 - Math.abs(clamped),
                   }}
@@ -329,7 +349,7 @@ export function MonthlyPicks({
                       priority={i < 3}
                       // 축소는 항상 중심 기준 — 모서리 기준이면 좌우 축소가 비대칭이라
                       // 카드 사이 간격이 들쭉날쭉해진다(가운데는 붙고 바깥은 벌어짐).
-                      transform={`translateX(${shiftX}px) rotateY(${rotate}deg) scale(${scale})`}
+                      transform={`rotateY(${rotate}deg) scale(${scale})`}
                     />
                   </div>
                 </button>

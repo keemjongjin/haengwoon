@@ -16,6 +16,7 @@ import { useAudioPlayer, type NowPlayingTrack } from "./player/AudioPlayerContex
 import { SpotifyFullPlayer, PREVIEW_MAX_SEC } from "./player/SpotifyFullPlayer";
 import { TrackTierStars } from "./track/TrackTierStars";
 import { useCoverColor } from "./useCoverColor";
+import { lpSurface } from "@/lib/media/lpDesign";
 
 type PlayerTrack = {
   id: number;
@@ -35,6 +36,9 @@ type PlayerAlbum = {
   artist: string;
   coverImageUrl: string | null;
   review: string | null;
+  /** 관리자가 지정한 판 색·무늬. 없으면 기본 검정판(lib/media/lpDesign.ts). */
+  lpColor: string | null;
+  lpPattern: string | null;
 };
 
 function formatDuration(ms: number | null): string {
@@ -82,22 +86,30 @@ function Turntable({
   title,
   artist,
   spinning,
+  lpColor,
+  lpPattern,
 }: {
   coverImageUrl: string | null;
   title: string;
   artist: string;
   spinning: boolean;
+  lpColor: string | null;
+  lpPattern: string | null;
 }) {
   const cover = useCoverColor(coverImageUrl);
+  const surface = lpSurface(lpColor, lpPattern);
   return (
     // 넓은 화면에서는 왼쪽 영역을 통째로 쓰므로 판을 크게 키운다.
     // 내부 배치가 전부 %라서 크기가 변해도 톤암 각도(아래)를 다시 잡을 필요는 없다.
     // 판(최대 1.06W)과 park한 톤암(최대 ~1.09W)은 이 상자보다 오른쪽으로 조금 삐져나온다.
     // 좁은 화면에서 폭을 더 줄여두는 건 그 여유분까지 화면 안에 들어오게 하려는 것.
     <div className="relative aspect-[1.45/1] w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[580px] xl:max-w-[660px]">
-      {/* LP — 재생 중이면 자켓 밖으로 더 빠져나오면서 회전 */}
+      {/* LP — 재생 중이면 자켓 밖으로 더 빠져나오면서 회전.
+          z-[5]: 판이 자켓 **위로** 얹혀 돌아야 한다(턴테이블에 판을 올려둔 모습).
+          예전엔 자켓이 뒤 DOM 순서라 판을 덮어, 판이 자켓 뒤로 들어간 것처럼 보였다.
+          톤암(z-10)보다는 아래여야 바늘이 판 위에 놓인다. */}
       <div
-        className="absolute left-[26%] top-1/2 aspect-square w-[68%] -translate-y-1/2 transition-[left] duration-700 ease-out"
+        className="absolute left-[26%] top-1/2 z-[5] aspect-square w-[68%] -translate-y-1/2 transition-[left] duration-700 ease-out"
         style={{ left: spinning ? "38%" : "26%" }}
       >
         {/* ring/그림자: 다크 모드에서 검은 판이 어두운 배경에 그대로 묻히는 걸 막는다.
@@ -110,9 +122,10 @@ function Turntable({
         <div
           className="h-full w-full rounded-full shadow-xl ring-1 ring-black/20 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.14),0_10px_40px_rgba(0,0,0,0.7)] dark:ring-white/15"
           style={{
-            backgroundColor: "#191920",
-            backgroundImage:
-              "repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,0.055) 0 3px, rgba(0,0,0,0) 3px 6px)",
+            // 색·무늬는 관리자가 앨범별로 지정한 값에서 온다. lpSurface가 단색(backgroundColor)과
+            // 무늬(backgroundImage)를 분리해 돌려주므로 위의 Safari 대비도 그대로 유지된다.
+            backgroundColor: surface.backgroundColor,
+            backgroundImage: surface.backgroundImage,
             animation: "haengwoon-spin 5s linear infinite",
             animationPlayState: spinning ? "running" : "paused",
             transform: "translateZ(0)",
@@ -445,6 +458,8 @@ export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose
                 title={album.title}
                 artist={album.artist}
                 spinning={spinning}
+                lpColor={album.lpColor}
+                lpPattern={album.lpPattern}
               />
             </div>
 

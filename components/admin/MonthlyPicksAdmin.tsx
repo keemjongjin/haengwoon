@@ -10,6 +10,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { todayKST } from "@/lib/format";
+import { LP_COLOR_PRESETS, LP_PATTERNS, lpSurface, type LpPattern } from "@/lib/media/lpDesign";
 import { useAdminToast, describeFailure } from "./AdminToastContext";
 
 const MAX_PICKS = 10;
@@ -20,7 +21,106 @@ type PickableAlbum = {
   title: string;
   artist: string;
   coverImageUrl: string | null;
+  /** 플레이어에서 도는 판의 색·무늬. null이면 기본 검정판. */
+  lpColor?: string | null;
+  lpPattern?: string | null;
 };
+
+/**
+ * 판 디자인 편집기. 색·무늬는 앨범에 붙는 값이라 월간 목록 저장(PUT)과 별개로 바로 저장한다
+ * — 목록 저장 버튼을 눌러야 반영되면 "고른 색이 왜 안 보이지?" 하고 헷갈리기 때문.
+ */
+function LpDesignEditor({
+  album,
+  onChange,
+}: {
+  album: PickableAlbum;
+  onChange: (patch: { lpColor?: string | null; lpPattern?: string | null }) => void;
+}) {
+  const { showError } = useAdminToast();
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const pattern = (album.lpPattern ?? "classic") as LpPattern;
+  const color = album.lpColor ?? LP_COLOR_PRESETS[0];
+  const preview = lpSurface(album.lpColor, album.lpPattern);
+
+  async function save(patch: { lpColor?: string | null; lpPattern?: string | null }) {
+    onChange(patch); // 낙관적 반영 — 미리보기가 즉시 바뀌어야 색을 고르는 맛이 난다
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/albums/${album.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) showError(await describeFailure(res));
+    } catch {
+      showError("판 디자인을 저장하지 못했어요.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label={`${album.title} 판 디자인`}
+        aria-expanded={open}
+        title="판 디자인"
+        className={
+          "h-7 w-7 rounded-full ring-1 ring-line transition-opacity " + (saving ? "opacity-50" : "")
+        }
+        style={{ backgroundColor: preview.backgroundColor, backgroundImage: preview.backgroundImage }}
+      />
+      {open && (
+        <div className="absolute right-0 top-9 z-20 w-56 rounded-xl border border-line bg-card p-3 shadow-xl">
+          <p className="mb-2 text-[11px] font-medium text-mut">판 무늬</p>
+          <select
+            value={pattern}
+            onChange={(e) => save({ lpPattern: e.target.value })}
+            className="mb-3 w-full rounded-lg border border-line bg-bg px-2 py-1.5 text-xs outline-none focus:border-acc"
+          >
+            {LP_PATTERNS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+
+          {/* classic은 항상 검정이라 색 선택이 의미가 없다 — 헷갈리지 않게 감춘다 */}
+          {pattern !== "classic" && (
+            <>
+              <p className="mb-2 text-[11px] font-medium text-mut">판 색</p>
+              <div className="flex flex-wrap gap-1.5">
+                {LP_COLOR_PRESETS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => save({ lpColor: c })}
+                    aria-label={c}
+                    aria-current={color.toLowerCase() === c ? "true" : undefined}
+                    className={
+                      "h-6 w-6 rounded-full ring-1 " +
+                      (color.toLowerCase() === c ? "ring-2 ring-acc" : "ring-line")
+                    }
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          <button
+            onClick={() => save({ lpColor: null, lpPattern: null })}
+            className="mt-3 text-[11px] text-mut underline-offset-2 hover:text-fg hover:underline"
+          >
+            기본 판으로 되돌리기
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function MonthlyPicksAdmin({ albums }: { albums: PickableAlbum[] }) {
   const { showError, showSuccess } = useAdminToast();
@@ -162,6 +262,12 @@ export function MonthlyPicksAdmin({ albums }: { albums: PickableAlbum[] }) {
               <span className="min-w-0 flex-1 truncate">
                 {a.title} <span className="text-mut">— {a.artist}</span>
               </span>
+              <LpDesignEditor
+                album={a}
+                onChange={(patch) =>
+                  setPicked((p) => p.map((x) => (x.id === a.id ? { ...x, ...patch } : x)))
+                }
+              />
               <button
                 onClick={() => move(i, -1)}
                 disabled={i === 0}

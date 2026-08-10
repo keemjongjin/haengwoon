@@ -27,6 +27,10 @@ export const albums = pgTable("albums", {
   albumType: varchar("album_type", { length: 32 }).notNull().default("album"), // album | single | compilation
   review: text("review"), // 리뷰 한 줄
   manualRating: real("manual_rating"), // 0~10, 내가 지정 = 공식 점수 (미평가 시 null)
+  // 플레이어에서 도는 LP판의 생김새. 관리자가 월간 추천을 고를 때 앨범별로 지정한다.
+  // 둘 다 null이면 기본 검정판 — 기존 앨범들이 그대로 유지되도록 의도적으로 nullable.
+  lpColor: varchar("lp_color", { length: 32 }), // "#rrggbb"
+  lpPattern: varchar("lp_pattern", { length: 16 }), // classic | solid | splatter | swirl (lib/media/lpDesign.ts)
   eloRating: integer("elo_rating").notNull().default(1500),
   matchCount: integer("match_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
