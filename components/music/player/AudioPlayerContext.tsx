@@ -29,6 +29,13 @@ export type FullPlayback = {
   position: number;
   duration: number;
   isPaused: boolean;
+  /**
+   * 지금 울리고 있는 트랙의 Spotify ID(`spotify:track:...`의 뒷부분).
+   * Spotify가 playback_update에 playingURI로 실어 보내준다 — 앨범을 통째로 걸어두면
+   * 곡이 자동으로 넘어가므로, 이게 있어야 "몇 번째 무슨 곡인지"를 알 수 있다.
+   * 못 받았으면 null.
+   */
+  trackId: string | null;
   togglePlay: () => void;
   seek: (seconds: number) => void;
 };

@@ -27,6 +27,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     },
     tracks: data.tracks.map((t) => ({
       id: t.id,
+      // Spotify 전곡 재생 시 playback_update의 playingURI와 맞춰 "지금 몇 번째 곡인지" 알아내는 데 쓴다
+      spotifyTrackId: t.spotifyTrackId,
       title: t.title,
       trackNumber: t.trackNumber,
       durationMs: t.durationMs,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Logo } from "./Logo";
@@ -23,11 +23,14 @@ const NAV = {
 /**
  * 전역 상단 헤더. 이 사이트는 "Tech"와 "Music" 두 세계를 경로로 구분하는 컨셉이라(app/layout.tsx),
  * 헤더가 현재 경로를 보고 mode를 판단해 다른 네비게이션(NAV)을 보여주고 `data-mode`를
- * document에 심어 CSS 팔레트도 함께 바꾼다. 로고 클릭 시 반대 세계로 이동.
+ * document에 심어 CSS 팔레트도 함께 바꾼다.
+ *
+ * 로고는 "지금 있는 세계의 홈"으로 간다(Tech→/, Music→/music). 예전엔 로고가 반대 세계로
+ * 건너가는 토글이었는데, 로고를 누르면 홈으로 간다는 웹의 보편적 기대와 어긋났다.
+ * 세계 전환은 Footer의 tech/music 링크가 맡는다.
  */
 export function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const mode: "tech" | "music" =
     pathname === "/music" ||
     pathname.startsWith("/music/") ||
@@ -40,20 +43,15 @@ export function Header() {
     document.documentElement.dataset.mode = mode;
   }, [mode]);
 
-  // 로고 클릭 = 반대편 세계로 이동
-  function switchWorld() {
-    router.push(mode === "tech" ? "/music" : "/");
-  }
-
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur supports-[backdrop-filter]:bg-bg/70">
       {/* flex-wrap + 개별 아이템에 ml-auto: 공간이 부족하면 겹치거나 잘리지 않고
           넘치는 아이템만(주로 토글) 자연스럽게 다음 줄로 내려가며, 그 줄에서도 우측 정렬 유지 */}
       <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 sm:px-8 sm:py-5">
-        <button
-          onClick={switchWorld}
+        <Link
+          href={mode === "tech" ? "/" : "/music"}
           className="shrink-0 whitespace-nowrap text-base font-semibold text-fg sm:text-xl"
-          aria-label="Tech와 Music 모드 전환"
+          aria-label={mode === "tech" ? "Tech 홈으로" : "Music 홈으로"}
         >
           {/* 모바일: 헤더 텍스트가 넘쳐서 깨지는 걸 막기 위해 "Haengwoon" 대신 네잎클로버 로고 + 모드명.
               애플뮤직 아이콘+워드마크처럼 세로 중앙정렬 + 2px 간격. */}
@@ -68,7 +66,7 @@ export function Header() {
           <span className="hidden w-[6ch] text-left text-sm font-normal text-fg sm:inline-block">
             {mode === "tech" ? "_Tech" : "_Music"}
           </span>
-        </button>
+        </Link>
 
         <nav className="ml-auto flex shrink-0 gap-3 text-xs sm:gap-4 sm:text-sm">
           {NAV[mode].map((item) => (

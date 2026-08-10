@@ -23,7 +23,15 @@ type EmbedController = {
   destroy: () => void;
   addListener: (
     event: "playback_update" | "ready",
-    cb: (e: { data: { position: number; duration: number; isPaused: boolean } }) => void
+    cb: (e: {
+      data: {
+        position: number;
+        duration: number;
+        isPaused: boolean;
+        /** `spotify:track:...` — 앨범 재생 중 곡이 넘어가면 이 값이 바뀐다. 문서화되어 있진 않아 옵셔널. */
+        playingURI?: string;
+      };
+    }) => void
   ) => void;
 };
 
@@ -50,7 +58,7 @@ const READY_TIMEOUT_MS = 6000;
  * Spotify는 보통 30초를 주지만 20초짜리도 관측돼서 넉넉히 45초로 잡았다.
  * (정규 곡이 45초 이하인 경우는 거의 없고, 그런 곡이면 어차피 오판해도 손해가 없다.)
  */
-const PREVIEW_MAX_SEC = 45;
+export const PREVIEW_MAX_SEC = 45;
 
 /**
  * API 스크립트를 한 번만 로드하고, 준비된 IFrameAPI 객체를 돌려준다.
@@ -148,6 +156,9 @@ export function SpotifyFullPlayer({
                 position: pos,
                 duration: dur,
                 isPaused: e.data.isPaused,
+                // "spotify:track:xxx" → "xxx". 우리 tracks.spotify_track_id와 바로 맞춰볼 수 있다.
+                // 전곡 재생에서는 이 값이 오지 않는 경우가 있어, 받는 쪽에 길이 기반 폴백을 뒀다.
+                trackId: e.data.playingURI?.split(":").pop() ?? null,
                 togglePlay: () => controllerRef.current?.togglePlay(),
                 seek: (s: number) => controllerRef.current?.seek(s),
               });
@@ -225,8 +236,14 @@ export function SpotifyFullPlayer({
         </div>
       </div>
 
-      {/* 실제 임베드 — 숨기면 재생이 깨지므로 남겨두되 작게. 출처 표기 역할도 겸한다. */}
-      <div ref={hostRef} className="mt-3 overflow-hidden rounded-lg opacity-70" />
+      {/* 실제 임베드 — 숨기면 재생이 깨지므로 남겨두되 작게. 출처 표기 역할도 겸한다.
+          ★ iFrame API는 넘겨받은 요소를 iframe으로 "교체"한다. 그래서 hostRef가 달린 div에
+            준 클래스는 컨트롤러 생성과 동시에 전부 사라진다 — 여백을 여기 줘봐야 먹지 않는다.
+            간격·모서리·투명도는 교체되지 않는 바깥 래퍼가 들고 있어야 한다.
+          자체 컨트롤과 붙어 있으면 재생 버튼이 임베드에 얹힌 것처럼 보여 여백을 넉넉히 둔다. */}
+      <div className="mt-6 overflow-hidden rounded-lg opacity-70">
+        <div ref={hostRef} />
+      </div>
 
       {/* 전곡이 안 나올 때 "왜 안 되는지"를 알려준다. 예전엔 조건 없이 한 줄만 띄워서,
           로그인을 해둔 방문자는 왜 여전히 짧게 끊기는지 알 길이 없었다.

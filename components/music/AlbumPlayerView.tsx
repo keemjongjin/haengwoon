@@ -13,12 +13,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAudioPlayer, type NowPlayingTrack } from "./player/AudioPlayerContext";
-import { SpotifyFullPlayer } from "./player/SpotifyFullPlayer";
+import { SpotifyFullPlayer, PREVIEW_MAX_SEC } from "./player/SpotifyFullPlayer";
 import { TrackTierStars } from "./track/TrackTierStars";
 import { useCoverColor } from "./useCoverColor";
 
 type PlayerTrack = {
   id: number;
+  spotifyTrackId: string | null;
   title: string;
   trackNumber: number;
   durationMs: number | null;
@@ -240,7 +241,7 @@ function Turntable({
 }
 
 export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose: () => void }) {
-  const { current, isPlaying, play, playQueue, pause } = useAudioPlayer();
+  const { current, isPlaying, play, playQueue, pause, fullPlayback } = useAudioPlayer();
   const [album, setAlbum] = useState<PlayerAlbum | null>(null);
   const [tracks, setTracks] = useState<PlayerTrack[]>([]);
   // 초기값 true — 이펙트 안에서 동기적으로 setLoading(true)를 부르면 불필요한 연쇄 렌더가 생긴다.
@@ -336,8 +337,64 @@ export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose
   );
 
   // 이 앨범의 곡이 지금 재생 중인지 — 판 회전·톤암·전체재생 버튼 상태를 함께 결정한다
-  const thisAlbumPlaying = isPlaying && tracks.some((t) => t.id === current?.id);
+  // 미리듣기(Deezer)로 이 앨범의 곡이 재생 중인지 — "전체 재생" 버튼의 상태를 결정한다.
+  const previewPlaying = isPlaying && tracks.some((t) => t.id === current?.id);
+  // Spotify 전곡 재생 중인지. 이 뷰가 열려 있는 동안 등록되는 건 이 앨범의 플레이어뿐이다.
+  const spotifyPlaying = !!fullPlayback && !fullPlayback.isPaused;
+  // 판과 톤암은 "소리가 나고 있는가"만 보면 된다 — 음원이 Deezer든 Spotify든 상관없이 돈다.
+  // (버튼 상태와 분리해 두는 게 중요하다. 버튼은 Deezer 큐만 제어하므로, Spotify 재생 중에
+  //  버튼까지 '일시정지'로 바뀌면 눌러도 아무 일이 없는 죽은 컨트롤이 된다.)
+  const spinning = previewPlaying || spotifyPlaying;
   const hasPreview = tracks.some((t) => t.previewUrl);
+
+  // Spotify는 앨범을 통째로 걸어두면 곡이 알아서 넘어가는데, 우리 화면에는 앨범 제목만 떠 있어
+  // 지금 무슨 곡인지 알 수가 없었다. 그래서 어느 수록곡인지 되짚는다 — 두 단계로.
+  const spotifyTrack = (() => {
+    if (!fullPlayback) return null;
+
+    // ① 트랙 ID가 오면 그게 가장 정확하다. 미리듣기 모드에서는 이 경로로 잘 잡힌다.
+    if (fullPlayback.trackId) {
+      const byId = tracks.find((t) => t.spotifyTrackId === fullPlayback.trackId);
+      if (byId) return byId;
+    }
+
+    // ② ID로 못 찾는 경우가 실제로 있다(전곡 재생에서 playingURI가 오지 않거나, 국가별
+    //    리링크로 같은 곡이라도 ID가 달라짐). 이때는 재생 길이로 되짚는다.
+    //    양쪽 길이 모두 Spotify에서 온 같은 값이라 거의 정확히 일치한다 — 화면에 3:53과 3:54로
+    //    다르게 보이는 건 내림/반올림 차이일 뿐이다. 그래서 허용 오차를 넉넉히 두면 안 된다.
+    //    실측: 이번 달 추천 140곡 기준 겹치는 쌍이 ±2초 30개 / ±1초 13개 / ±0.3초 3개.
+    //    미리듣기 클립(30초 안팎)은 곡 길이가 아니므로 애초에 제외한다.
+    const dur = fullPlayback.duration;
+    if (!dur || dur <= PREVIEW_MAX_SEC) return null;
+
+    const TOLERANCE_MS = 300;
+    let best: PlayerTrack | null = null;
+    let bestDiff = Infinity;
+    let runnerUpDiff = Infinity;
+    for (const t of tracks) {
+      if (!t.durationMs) continue;
+      const diff = Math.abs(t.durationMs - dur * 1000);
+      if (diff < bestDiff) {
+        runnerUpDiff = bestDiff;
+        bestDiff = diff;
+        best = t;
+      } else if (diff < runnerUpDiff) {
+        runnerUpDiff = diff;
+      }
+    }
+    // 길이가 비슷한 곡이 둘 이상이면 찍지 않는다 — 엉뚱한 곡을 초록으로 물들이는 것보다
+    // 아무 표시도 없는 편이 낫다(잘못된 정보가 더 나쁘다).
+    if (bestDiff > TOLERANCE_MS || runnerUpDiff <= TOLERANCE_MS) return null;
+    return best;
+  })();
+
+  // 리스트에는 일곱 곡만 보이므로, Spotify가 다음 곡으로 넘어가면 그 줄이 화면 밖일 수 있다.
+  // 곡이 바뀔 때만(트랙 id 기준) 안 보이는 경우에 한해 끌어와 하이라이트가 늘 눈에 띄게 한다.
+  // block:"nearest" — 이미 보이면 스크롤하지 않으므로 손으로 훑는 중에 튀지 않는다.
+  const spotifyRowRef = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    spotifyRowRef.current?.scrollIntoView({ block: "nearest" });
+  }, [spotifyTrack?.id]);
 
   return (
     // 본문 기본 폭(max-w-3xl)이나 기존 5xl에 맞추지 않는다 — 이 화면은 "턴테이블 + 수록곡"
@@ -368,12 +425,20 @@ export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose
           // 넓은 화면에선 닫기 버튼이 오른쪽 칼럼의 제목 옆에 놓이므로 필요 없다.
           <div className="flex flex-col items-center gap-10 pt-10 lg:flex-row lg:items-start lg:gap-14 lg:pt-0 xl:gap-20">
             {/* 왼쪽: 턴테이블. 리스트가 길어도 판은 화면에 남아 있도록 sticky */}
-            <div className="flex w-full shrink-0 justify-center lg:sticky lg:top-24 lg:w-[60%] lg:justify-start">
+            {/* 판을 오른쪽 칼럼 시작선 가까이(mt-4) 올린다. 이전에는 lg:top-24가 96px 아래로
+                밀고 있었는데, 화면 하단에 떠 있는 재생바(약 80px)까지 아래 공간을 먹어 판이
+                눌려 보였다. 96px → 16px로 줄여 딱 재생바 높이만큼 끌어올린 셈.
+                ★ 예전에 있던 lg:sticky lg:top-24는 지워도 무방했다 — /music 섹션의
+                  overflow-hidden이 sticky의 스크롤포트가 되어 실제로는 한 번도 고정된 적이 없고
+                  (스크롤하면 그대로 따라 올라가 헤더 밑으로 들어감), 아래로 미는 역할만 했다.
+                  margin으로 올리려 해도 sticky의 top이 이겨서 먹히지 않는다.
+                세로로 쌓이는 좁은 화면에서는 판이 이미 맨 위라 적용하지 않는다. */}
+            <div className="flex w-full shrink-0 justify-center lg:mt-4 lg:w-[60%] lg:justify-start">
               <Turntable
                 coverImageUrl={album.coverImageUrl}
                 title={album.title}
                 artist={album.artist}
-                spinning={thisAlbumPlaying}
+                spinning={spinning}
               />
             </div>
 
@@ -388,16 +453,34 @@ export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose
                 >
                   {album.artist}
                 </Link>
+
+                {/* 전곡 재생 중 지금 울리는 곡. 앨범 재생은 곡이 자동으로 넘어가므로
+                    제목만 보고는 어디쯤인지 알 수 없다. 미리듣기일 땐 리스트에서 이미
+                    이퀄라이저로 표시되므로 여기엔 띄우지 않는다. */}
+                {spotifyTrack && (
+                  <p className="mt-2 flex items-center justify-center gap-2 text-sm lg:justify-start">
+                    <Equalizer />
+                    <span className="tabular-nums text-mut">
+                      {String(spotifyTrack.trackNumber).padStart(2, "0")}
+                    </span>
+                    <span className="min-w-0 truncate font-medium text-acc">{spotifyTrack.title}</span>
+                  </p>
+                )}
               </div>
 
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                 {hasPreview && (
                   <button
-                    onClick={() => (thisAlbumPlaying ? pause() : playQueue(playable()))}
+                    onClick={() => {
+                      if (previewPlaying) return pause();
+                      // Spotify가 울리는 중에 미리듣기를 얹으면 두 음원이 겹친다 — 먼저 멈춘다.
+                      if (spotifyPlaying) fullPlayback?.togglePlay();
+                      playQueue(playable());
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-full bg-acc px-5 py-2.5 text-sm font-semibold text-on-acc"
                   >
-                    {thisAlbumPlaying ? <PauseIcon size={16} /> : <PlayIcon size={16} />}
-                    {thisAlbumPlaying ? "일시정지" : "전체 재생"}
+                    {previewPlaying ? <PauseIcon size={16} /> : <PlayIcon size={16} />}
+                    {previewPlaying ? "일시정지" : "전체 재생"}
                   </button>
                 )}
                 <Link
@@ -432,10 +515,18 @@ export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose
                 }
               >
                 {tracks.map((t) => {
-                  const isThis = current?.id === t.id;
-                  const nowPlaying = isThis && isPlaying;
+                  // 미리듣기(Deezer)로 고른 곡. Spotify가 울리는 동안에는 표시하지 않는다 —
+                  // current는 재생이 끝나도 마지막에 고른 곡을 계속 가리켜서, 그대로 두면
+                  // "소리는 2번 곡인데 5번 곡이 초록"인 상태가 된다(실제로 그렇게 보였다).
+                  const isThis = current?.id === t.id && !spotifyPlaying;
+                  // Spotify 전곡 재생이 지금 울리고 있는 곡. 앨범을 통째로 걸면 곡이 알아서
+                  // 넘어가는데, 리스트에 아무 표시가 없으면 어디를 듣고 있는지 알 수 없다.
+                  // 미리듣기를 건드리지 않고 표시만 옮겨준다(소리는 Spotify 쪽에서 계속 남).
+                  const isSpotifyThis = spotifyTrack?.id === t.id;
+                  const highlighted = isThis || isSpotifyThis;
+                  const nowPlaying = (isThis && isPlaying) || (isSpotifyThis && spotifyPlaying);
                   return (
-                    <li key={t.id}>
+                    <li key={t.id} ref={isSpotifyThis ? spotifyRowRef : undefined}>
                       <button
                         onClick={() =>
                           t.previewUrl &&
@@ -450,7 +541,7 @@ export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose
                         disabled={!t.previewUrl}
                         className={
                           "group flex w-full items-center gap-4 rounded-xl px-3 py-3 text-left transition-colors " +
-                          (isThis
+                          (highlighted
                             ? "bg-acc/8"
                             : "hover:bg-bg/60 disabled:opacity-35 disabled:hover:bg-transparent")
                         }
@@ -479,7 +570,7 @@ export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose
                           <span
                             className={
                               "block truncate text-[15px] leading-tight " +
-                              (isThis ? "font-semibold text-acc" : "font-medium")
+                              (highlighted ? "font-semibold text-acc" : "font-medium")
                             }
                           >
                             {t.title}

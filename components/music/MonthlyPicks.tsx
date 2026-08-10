@@ -283,9 +283,19 @@ export function MonthlyPicks({
             const rotate = isActive ? 0 : clamped > 0 ? -64 : 64;
             const scale = isActive ? 1 : Math.abs(clamped) === 1 ? 0.88 : 0.8;
             const opacity = isActive ? 1 : Math.abs(clamped) === 1 ? 0.7 : 0.45;
-            // 옆 카드를 가운데 쪽으로 당겨 진열대처럼 겹치게 한다. 거리에 비례시켜야
-            // 1번째·2번째 이웃 사이 간격이 균일해진다(고정값이면 뒤쪽에서 틈이 벌어짐).
-            const shiftX = -clamped * 68;
+            // 옆 카드를 가운데 쪽으로 당겨 진열대처럼 겹치게 한다. 거리에 비례한 고정 배수
+            // (-clamped * 68)를 쓰면 카드 중심 간격은 균일해지지만 **눈에 보이는 틈**은 그렇지 않다.
+            // 옆 카드는 눕고(64°) 작아져서(0.88 / 0.8) 실제 폭이 제각각이기 때문이다.
+            //
+            // 그래서 중심 간격이 아니라 "가장자리 사이 틈"을 기준으로 잡았고, 눕힌 카드의 폭은
+            // 계산이 아니라 브라우저에서 실측했다 — 원근(perspective)이 들어가면 삼각함수로
+            // 구한 값보다 더 작게 투영돼서(1번째 이웃 실측 77px, 계산 98px) 계산만 믿으면 어긋난다.
+            //   실측 폭 → 가운데 224px / 1번째 이웃 77px / 2번째 53px
+            //   기존 배수(68·136)일 때 틈 → 가운데↔1번째 13px, 1번째↔2번째 94px
+            //   목표 → 가운데↔1번째 20px(조금 더 넓게), 1번째↔2번째 62px(기존의 2/3)
+            // 당길 양을 1px 늘리면 그 카드가 1px 안쪽으로 붙는다는 관계로 역산 → 61 / 162.
+            const PULL = [0, 61, 162];
+            const shiftX = -Math.sign(clamped) * PULL[Math.abs(clamped)];
             return (
               <div key={a.id} className="relative shrink-0 snap-center" style={{ width: BOX, zIndex: 10 - Math.abs(clamped) }}>
                 <button
