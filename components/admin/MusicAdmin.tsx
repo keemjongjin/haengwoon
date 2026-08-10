@@ -11,6 +11,7 @@ import { SpotifyEmbed } from "@/components/music/SpotifyEmbed";
 import { TrackTierStars } from "@/components/music/track/TrackTierStars";
 import { GenrePicker } from "./GenrePicker";
 import { RegisterAlbumModal } from "./RegisterAlbumModal";
+import { MonthlyPicksAdmin } from "./MonthlyPicksAdmin";
 import { useAdminToast, describeFailure } from "./AdminToastContext";
 
 type Album = {
@@ -441,6 +442,9 @@ export function MusicAdmin() {
           }}
         />
       )}
+
+      {/* 월간 추천 — 등록된 앨범 중에서 고르는 거라 앨범 목록(standings)을 그대로 넘겨준다 */}
+      <MonthlyPicksAdmin albums={standings} />
 
       {/* 월드컵: 커버 이미지 + 미리듣기(Spotify 임베드)로 비교하며 투표 */}
       {pair && (

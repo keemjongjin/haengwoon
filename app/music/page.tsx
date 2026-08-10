@@ -1,82 +1,39 @@
-import Link from "next/link";
 import { repo } from "@/lib/db/repo";
-import { ratingColor } from "@/lib/music/rating";
-import { Cover } from "@/components/music/Cover";
-import { AlbumRatingCard } from "@/components/music/AlbumRatingCard";
-import { HeroFavoriteTrack } from "@/components/music/HeroFavoriteTrack";
+import { todayKST } from "@/lib/format";
+import { MonthlyPicks } from "@/components/music/MonthlyPicks";
 
 export const metadata = { title: "Music — Haengwoon" };
-export const dynamic = "force-dynamic"; // DB 데이터 매 요청 최신화 (투표·평점 반영)
+export const dynamic = "force-dynamic"; // DB 데이터 매 요청 최신화 (추천 변경 즉시 반영)
 
+// Music 홈은 "이 달의 LP를 넘겨보고 듣는" 한 가지 일에만 집중한다.
+// 최근 리뷰 목록·차트 같은 탐색은 Archive/Charts 페이지가 담당하므로 여기서는 두지 않는다.
 export default async function MusicHome() {
-  const [recent, recentList, favorites] = await Promise.all([
-    repo.recentReview(),
-    repo.recentReviews(5),
-    repo.listFavoriteTracks(),
-  ]);
+  // 기본은 이번 달(KST 기준 — UTC로 계산하면 자정~오전 9시에 지난달이 뜬다). 이번 달 추천이 아직
+  // 없으면 추천이 등록된 가장 최근 달로 자동 이동시켜, 첫 화면이 비는 상황을 피한다.
+  const pickMonths = await repo.listPickMonths();
+  const thisMonth = todayKST().slice(0, 7);
+  const shownMonth = pickMonths.includes(thisMonth) ? thisMonth : pickMonths[0] ?? thisMonth;
 
-  const heroTracks = recent ? (await repo.getAlbumWithTracks(recent.id))?.tracks ?? [] : [];
-  const heroFavorite = heroTracks.find((t) => t.isFavorite);
-
-  const cards = recentList.map((a) => ({
+  const picks = await repo.listMonthlyPicks(shownMonth);
+  const pickAlbums = picks.map((a) => ({
     id: a.id,
     spotifyAlbumId: a.spotifyAlbumId,
     title: a.title,
     artist: a.artist,
     coverImageUrl: a.coverImageUrl,
-    albumType: a.albumType,
-    manualRating: a.manualRating,
-    review: a.review,
-    favoriteTrack: favorites[a.id]
-      ? {
-          id: favorites[a.id].id,
-          title: favorites[a.id].title,
-          previewUrl: favorites[a.id].previewUrl,
-        }
-      : null,
   }));
 
   return (
-    <div>
-      {/* 최근 리뷰 히어로 — 화면 정중앙, 크게 */}
-      {recent && (
-        <section className="flex min-h-[80vh] flex-col items-center justify-center text-center">
-          <p className="mb-3 text-sm text-mut">{recent.reviewDate} 리뷰</p>
-          <Link href={`/music/album/${recent.spotifyAlbumId ?? recent.id}`}>
-            <Cover id={recent.id} title={recent.title} url={recent.coverImageUrl} size={220} />
-          </Link>
-          <Link href={`/music/album/${recent.spotifyAlbumId ?? recent.id}`}>
-            <h1 className="mt-6 text-4xl font-bold hover:text-acc sm:text-5xl">{recent.title}</h1>
-          </Link>
-          <Link href={`/artist/${encodeURIComponent(recent.artist)}`}>
-            <p className="mt-2 text-lg text-mut hover:text-fg hover:underline">{recent.artist}</p>
-          </Link>
-          <p
-            className="mt-5 text-5xl font-bold"
-            style={recent.manualRating != null ? { color: ratingColor(recent.manualRating) } : undefined}
-          >
-            {recent.manualRating}
-            <span className="ml-1 text-lg font-medium text-mut">/ 10</span>
-          </p>
-          {recent.review && <p className="mt-4 max-w-md text-mut">{recent.review}</p>}
-          {heroFavorite && <HeroFavoriteTrack id={heroFavorite.id} title={heroFavorite.title} />}
-        </section>
-      )}
-
-      {/* 최근 리뷰 5개 */}
-      <section className="py-10">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-semibold">최근 리뷰</h2>
-          <Link href="/music/archive" className="text-sm text-mut hover:text-acc">
-            더보기 →
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 gap-4">
-          {cards.map((a) => (
-            <AlbumRatingCard key={a.id} album={a} />
-          ))}
-        </div>
-      </section>
-    </div>
+    // 화살표를 화면 양 끝에 두려고 본문(max-w-3xl)을 뚫고 전체 폭으로 확장.
+    // 이 섹션 하나가 곧 페이지 전체라 세로도 화면을 채우도록 잡는다.
+    <section className="relative left-1/2 flex min-h-[70vh] w-screen -translate-x-1/2 items-center overflow-hidden py-10">
+      <div className="w-full">
+        <MonthlyPicks
+          initialYearMonth={shownMonth}
+          initialAlbums={pickAlbums}
+          initialMonths={pickMonths}
+        />
+      </div>
+    </section>
   );
 }

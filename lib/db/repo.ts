@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray } from "drizzle-orm";
 import { db, schema } from "./index";
 import { updateElo } from "@/lib/music/elo";
 import { todayKST } from "@/lib/format";
@@ -123,31 +123,6 @@ export const repo = {
       .where(eq(schema.tracks.albumId, id))
       .orderBy(schema.tracks.trackNumber);
     return { album, tracks };
-  },
-
-  // reviewDate는 날짜(일 단위)라 같은 날 등록분은 순서가 불안정 → createdAt(타임스탬프)으로 2차 정렬해
-  // "가장 최신"이 항상 확정적으로 맨 앞에 오게 한다.
-  /** 가장 최근 리뷰(평점 있는) 앨범 */
-  async recentReview(): Promise<AlbumRow | undefined> {
-    const dbc = await withDb();
-    const rows = await dbc
-      .select()
-      .from(schema.albums)
-      .where(and(isNotNull(schema.albums.manualRating), isNotNull(schema.albums.reviewDate)))
-      .orderBy(desc(schema.albums.reviewDate), desc(schema.albums.createdAt))
-      .limit(1);
-    return rows[0];
-  },
-
-  /** 최근 리뷰 N개 (최신순) — Music 홈 "최근 리뷰" 섹션용 */
-  async recentReviews(limit = 5): Promise<AlbumRow[]> {
-    const dbc = await withDb();
-    return dbc
-      .select()
-      .from(schema.albums)
-      .where(and(isNotNull(schema.albums.manualRating), isNotNull(schema.albums.reviewDate)))
-      .orderBy(desc(schema.albums.reviewDate), desc(schema.albums.createdAt))
-      .limit(limit);
   },
 
   /**
@@ -502,6 +477,50 @@ export const repo = {
       .insert(schema.profile)
       .values({ id: 1, ...data })
       .onConflictDoUpdate({ target: schema.profile.id, set: data });
+  },
+
+  // --- 월간 추천 앨범 (/music 홈 LP 캐러셀) ---
+  /**
+   * 특정 월(예: "2026-08")의 추천 앨범을 position 순서대로 반환. 추천이 없으면 빈 배열.
+   * monthly_picks와 albums를 조인해 앨범 정보를 통째로 넘긴다(화면에서 커버·제목·평점 전부 필요).
+   */
+  async listMonthlyPicks(yearMonth: string): Promise<AlbumRow[]> {
+    const dbc = await withDb();
+    const rows = await dbc
+      .select({ album: schema.albums })
+      .from(schema.monthlyPicks)
+      .innerJoin(schema.albums, eq(schema.monthlyPicks.albumId, schema.albums.id))
+      .where(eq(schema.monthlyPicks.yearMonth, yearMonth))
+      .orderBy(asc(schema.monthlyPicks.position));
+    return rows.map((r) => r.album);
+  },
+
+  /**
+   * 추천이 하나라도 등록된 월 목록(최신순). 화면의 이전/다음 달 화살표는 이 목록 안에서만
+   * 이동하게 해서, 데이터가 없는 빈 달로 무한히 넘어가지 않도록 한다.
+   */
+  async listPickMonths(): Promise<string[]> {
+    const dbc = await withDb();
+    const rows = await dbc
+      .selectDistinct({ yearMonth: schema.monthlyPicks.yearMonth })
+      .from(schema.monthlyPicks)
+      .orderBy(desc(schema.monthlyPicks.yearMonth));
+    return rows.map((r) => r.yearMonth);
+  },
+
+  /**
+   * 관리자: 해당 월의 추천 목록을 통째로 교체(기존 행 삭제 후 재삽입). 부분 수정 대신 전체 교체라
+   * 순서 재배열·삭제·추가를 한 번의 저장으로 처리할 수 있다. albumIds 배열 순서가 곧 position(1부터).
+   * 최대 10장까지만 반영하고 초과분은 잘라낸다.
+   */
+  async setMonthlyPicks(yearMonth: string, albumIds: number[]): Promise<void> {
+    const dbc = await withDb();
+    const limited = albumIds.slice(0, 10);
+    await dbc.delete(schema.monthlyPicks).where(eq(schema.monthlyPicks.yearMonth, yearMonth));
+    if (limited.length === 0) return;
+    await dbc.insert(schema.monthlyPicks).values(
+      limited.map((albumId, i) => ({ yearMonth, albumId, position: i + 1 }))
+    );
   },
 
   /** 관리자 백업 다운로드용 — 모든 테이블 전체 덤프(JSON). */

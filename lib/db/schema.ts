@@ -110,3 +110,20 @@ export const profile = pgTable("profile", {
   displayName: varchar("display_name", { length: 64 }).notNull().default("Haengwoon"),
   photoUrl: text("photo_url"),
 });
+
+// 월간 추천 앨범 (/music 홈 상단 LP 캐러셀). 리뷰일 기준 자동 선정이 아니라 관리자가 매달 직접
+// 고르는 큐레이션이라 별도 테이블로 둔다 — 같은 앨범을 여러 달에 다시 추천할 수 있어야 하고,
+// 화면에 보일 순서(position)도 앨범 자체 속성이 아니라 "그 달의" 속성이기 때문.
+export const monthlyPicks = pgTable(
+  "monthly_picks",
+  {
+    id: serial("id").primaryKey(),
+    yearMonth: varchar("year_month", { length: 7 }).notNull(), // "2026-08"
+    albumId: integer("album_id")
+      .notNull()
+      .references(() => albums.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(), // 1~10, 캐러셀 표시 순서
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("monthly_picks_unique").on(table.yearMonth, table.albumId)]
+);

@@ -14,6 +14,25 @@ export type NowPlayingTrack = {
   previewUrl: string;
 };
 
+/**
+ * Spotify 전곡 재생이 활성화됐을 때 하단 재생바가 대신 표시·조작할 상태.
+ *
+ * Deezer 미리듣기(30초)는 탐색할 구간 자체가 없어 재생바를 두지 않는다. 반대로 Spotify 전곡
+ * 재생은 곡이 길어 탐색이 필요하므로, SpotifyFullPlayer가 자신의 컨트롤러를 여기 등록해서
+ * 하단 재생바가 위치를 표시하고 seek까지 걸 수 있게 한다.
+ */
+export type FullPlayback = {
+  title: string;
+  artist: string;
+  coverImageUrl: string | null;
+  /** 초 단위 */
+  position: number;
+  duration: number;
+  isPaused: boolean;
+  togglePlay: () => void;
+  seek: (seconds: number) => void;
+};
+
 type AudioPlayerContextValue = {
   current: NowPlayingTrack | null;
   isPlaying: boolean;
@@ -24,6 +43,10 @@ type AudioPlayerContextValue = {
   playQueue: (tracks: NowPlayingTrack[]) => void;
   pause: () => void;
   setVolume: (v: number) => void;
+  /** Spotify 전곡 재생 중이면 그 상태, 아니면 null. 하단 재생바가 이걸 보고 seek 바를 띄운다. */
+  fullPlayback: FullPlayback | null;
+  /** SpotifyFullPlayer가 마운트/상태변경 시 등록, 언마운트 시 null로 해제. */
+  setFullPlayback: (fp: FullPlayback | null) => void;
 };
 
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
@@ -40,6 +63,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [current, setCurrentState] = useState<NowPlayingTrack | null>(null);
   const [isPlaying, setIsPlayingState] = useState(false);
   const [volume, setVolumeState] = useState(1);
+  const [fullPlayback, setFullPlayback] = useState<FullPlayback | null>(null);
 
   function setCurrent(t: NowPlayingTrack | null) {
     currentRef.current = t;
@@ -120,7 +144,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AudioPlayerContext.Provider value={{ current, isPlaying, volume, play, playQueue, pause, setVolume }}>
+    <AudioPlayerContext.Provider
+      value={{ current, isPlaying, volume, play, playQueue, pause, setVolume, fullPlayback, setFullPlayback }}
+    >
       {children}
     </AudioPlayerContext.Provider>
   );

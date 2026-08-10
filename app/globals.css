@@ -5,6 +5,14 @@
   <html data-mode="tech|music" data-theme="light|dark"> 로 전환.
   값 출처: DECISIONS.log #7 (레퍼런스 배경 실측 + Podiums/네온그린)
 */
+
+/*
+  Tailwind의 dark: 유틸을 "OS 설정"이 아니라 "사이트 테마 토글(data-theme)"에 연결한다.
+  이 선언이 없으면 dark:xxx 가 prefers-color-scheme를 따라가서, 사이트는 라이트인데 OS가
+  다크면 잘못 적용되는 식으로 어긋난다. 색은 대부분 --bg/--fg 변수로 처리하지만, 변수로
+  빼기 애매한 일회성 값(예: LP 판 테두리)에 dark:를 쓸 때 필요하다.
+*/
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 @theme inline {
   --color-bg: var(--bg);
   --color-fg: var(--fg);
