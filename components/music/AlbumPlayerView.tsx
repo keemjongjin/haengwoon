@@ -124,19 +124,25 @@ function Turntable({
               작게 줄어든 사진은 어차피 알아보기도 어렵다. 스핀들 홀을 사이에 두고
               위에 제목 / 아래 아티스트 — 라벨이 판과 함께 도는 것도 실물 그대로다. */}
           <div
-            className="absolute left-1/2 top-1/2 flex h-[36%] w-[36%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[5%] overflow-hidden rounded-full px-[9%] ring-1 ring-black/40"
+            // ★ 여기에 px-[%]를 주면 안 된다. 퍼센트 패딩은 자기 너비가 아니라 **포함 블록(LP판)**의
+            //   너비를 기준으로 계산돼서, px-[9%]가 판 지름의 9%(라벨 지름의 25%)만큼 들어가버린다.
+            //   그러면 라벨 내용 영역이 반토막 나고, 그 안의 w-[12%]와 h-[12%]가 서로 다른 기준을
+            //   잡아 스핀들 홀이 2:1 세로 타원이 됐다. 여백은 안쪽 요소의 너비로 대신 만든다.
+            className="absolute left-1/2 top-1/2 flex h-[36%] w-[36%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[5%] overflow-hidden rounded-full ring-1 ring-black/40"
             style={{ backgroundColor: cover?.spine ?? "#d9d6ce" }}
           >
             <span
-              className="w-full truncate text-center text-[7px] font-bold uppercase leading-tight tracking-tight sm:text-[8px] lg:text-[11px]"
+              className="w-[78%] truncate text-center text-[7px] font-bold uppercase leading-tight tracking-tight sm:text-[8px] lg:text-[11px]"
               style={{ color: cover?.ink ?? "rgba(0,0,0,0.72)" }}
             >
               {title}
             </span>
-            {/* 스핀들 홀 — 라벨 지름의 12%(= 판 지름의 4.3%)로 실물 비율에 맞춘다 */}
-            <span className="h-[12%] w-[12%] shrink-0 rounded-full bg-bg ring-1 ring-black/50" />
+            {/* 스핀들 홀 — 라벨 지름의 12%(= 판 지름의 4.3%)로 실물 비율에 맞춘다.
+                너비를 %로 따로 주지 않고 aspect-square로 높이에 맞춘다 — 가로·세로가 각각
+                다른 기준으로 계산될 여지를 없애 어떤 경우에도 정원(正圓)을 보장한다. */}
+            <span className="aspect-square h-[12%] shrink-0 rounded-full bg-bg ring-1 ring-black/50" />
             <span
-              className="w-full truncate text-center text-[6px] leading-tight opacity-80 sm:text-[7px] lg:text-[9px]"
+              className="w-[78%] truncate text-center text-[6px] leading-tight opacity-80 sm:text-[7px] lg:text-[9px]"
               style={{ color: cover?.ink ?? "rgba(0,0,0,0.72)" }}
             >
               {artist}
