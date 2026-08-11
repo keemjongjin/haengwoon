@@ -23,17 +23,22 @@ export default async function MusicHome() {
     coverImageUrl: a.coverImageUrl,
   }));
 
+  // 히어로 아래 그리드 — 여태 추천에 올린 앨범 전체(아티스트 이름순).
+  const allPicked = (await repo.listAllPickedAlbums()).map((a) => ({
+    id: a.id,
+    title: a.title,
+    artist: a.artist,
+    coverImageUrl: a.coverImageUrl,
+  }));
+
+  // 히어로의 전체 폭 확장과 그 아래 그리드 배치는 MonthlyPicks 안에서 처리한다 —
+  // 플레이어를 열면 둘 다 사라져야 해서, 한 컴포넌트가 같이 쥐고 있어야 분기가 단순하다.
   return (
-    // 화살표를 화면 양 끝에 두려고 본문(max-w-3xl)을 뚫고 전체 폭으로 확장.
-    // 이 섹션 하나가 곧 페이지 전체라 세로도 화면을 채우도록 잡는다.
-    <section className="relative left-1/2 flex min-h-[70vh] w-screen -translate-x-1/2 items-center overflow-hidden py-10">
-      <div className="w-full">
-        <MonthlyPicks
-          initialYearMonth={shownMonth}
-          initialAlbums={pickAlbums}
-          initialMonths={pickMonths}
-        />
-      </div>
-    </section>
+    <MonthlyPicks
+      initialYearMonth={shownMonth}
+      initialAlbums={pickAlbums}
+      initialMonths={pickMonths}
+      allPicked={allPicked}
+    />
   );
 }

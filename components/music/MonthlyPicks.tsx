@@ -22,6 +22,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlbumPlayerView } from "./AlbumPlayerView";
+import { PickedAlbumGrid, type GridAlbum } from "./PickedAlbumGrid";
 import { useCoverColor } from "./useCoverColor";
 
 const MONTH_ABBR = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -36,6 +37,14 @@ const DEPTH = 15;
  * 절반으로 줄이는 값이라 = 기존 틈 / 2 (아래 shiftX 계산부 주석 참고).
  */
 const OUTER_STEP = 108;
+
+/**
+ * 본문 폭(max-w-3xl)을 뚫고 화면 전체로 펼치는 클래스.
+ * 진열대와 플레이어 둘 다 화면을 꽉 써야 해서 한 곳에 묶어둔다 — 한쪽만 고치다
+ * 다른 쪽이 본문 폭에 갇히는 일이 실제로 있었다. 폭 제한은 아래 커버 그리드에만 둔다.
+ * overflow-hidden: w-screen(=100vw)이 스크롤바 폭까지 잡아 가로 스크롤이 생기는 걸 막는다.
+ */
+const FULL_BLEED = "relative left-1/2 w-screen -translate-x-1/2 overflow-hidden";
 
 /** "2026-08" → { year: "2026", month: "AUG" } */
 function splitMonthLabel(yearMonth: string): { year: string; month: string } {
@@ -145,9 +154,11 @@ function AlbumCase({
             {album.title.slice(0, 1)}
           </div>
         )}
-        {/* 표면에 비스듬히 떨어지는 빛 + 스파인 쪽 접힘 그림자 — 평면 그림이 아니라 물체로 보이게 하는 마감 */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/25" />
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-black/30 to-transparent" />
+        {/* 표면에 비스듬히 떨어지는 빛 — 평면 그림이 아니라 물체로 보이게 하는 마감.
+            어둡게 까는 층은 전부 뺐다(왼쪽 접힘 그림자, 우하단 그늘). 케이스가 이미 진짜 3D
+            박스라 두께는 옆면으로 드러나는데, 커버 위에 검은 기울기까지 겹치니 커버 그림만
+            가려져 지저분했다. 남긴 건 좌상단 하이라이트뿐. */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
       </div>
 
       {/* 뒷면은 두지 않는다 — 최대 64°까지만 눕히므로 뒤가 보일 일이 없고, 뒷면을 넣으면
@@ -162,10 +173,13 @@ export function MonthlyPicks({
   initialYearMonth,
   initialAlbums,
   initialMonths,
+  allPicked,
 }: {
   initialYearMonth: string;
   initialAlbums: PickAlbum[];
   initialMonths: string[];
+  /** 여태 월간 추천에 올린 앨범 전체 — 히어로 아래 커버 그리드용(아티스트 이름순). */
+  allPicked: GridAlbum[];
 }) {
   const [yearMonth, setYearMonth] = useState(initialYearMonth);
   const [albums, setAlbums] = useState(initialAlbums);
@@ -248,13 +262,24 @@ export function MonthlyPicks({
 
   // 플레이어가 열려 있으면 진열대 대신 플레이어만 보여준다(앱처럼 화면이 전환되는 흐름).
   if (openAlbumId != null) {
+    // 플레이어도 진열대와 같이 화면 전체 폭을 쓴다 — 본문(max-w-3xl) 안에 그대로 두면
+    // 704px에 갇혀 판이 355px로 쪼그라든다(그리드를 넣으며 래퍼를 옮기다 실제로 그랬다).
+    // 폭 제한은 아래 커버 그리드에만 남긴다.
     // key: 다른 앨범을 열면 새로 마운트돼 로딩 상태가 깨끗하게 초기화된다
     return (
-      <AlbumPlayerView key={openAlbumId} albumId={openAlbumId} onClose={() => setOpenAlbumId(null)} />
+      <div className={FULL_BLEED}>
+        <AlbumPlayerView key={openAlbumId} albumId={openAlbumId} onClose={() => setOpenAlbumId(null)} />
+      </div>
     );
   }
 
   return (
+    <>
+      {/* 히어로. 화살표를 화면 양 끝에 두려고 본문(max-w-3xl)을 뚫고 전체 폭으로 확장한다.
+          높이를 "화면에서 헤더·여백을 뺀 만큼"으로 잡는 건, 접속 직후에는 아래 그리드가
+          한 조각도 보이지 않아야 하기 때문 — 아래로 끌어내려야 나타나는 게 이 화면의 의도다. */}
+      <section className={`${FULL_BLEED} flex min-h-[calc(100vh-7rem)] items-center`}>
+        <div className="w-full">
     <section className="relative">
       {/* 월 라벨: 2026(작게) 위 / AUG(아래). 평소 반투명, 호버 시 두 줄 함께 진해짐 */}
       <div className="group mb-8 flex cursor-default flex-col items-center leading-none">
@@ -403,5 +428,10 @@ export function MonthlyPicks({
         </button>
       )}
     </section>
+        </div>
+      </section>
+
+      <PickedAlbumGrid albums={allPicked} onOpen={onOpen} />
+    </>
   );
 }

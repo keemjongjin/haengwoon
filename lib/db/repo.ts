@@ -515,6 +515,27 @@ export const repo = {
   },
 
   /**
+   * 여태 월간 추천에 한 번이라도 올린 앨범 전체(중복 제거). Music 홈 히어로 아래에 깔리는
+   * 커버 그리드용. 같은 앨범이 여러 달에 들어가 있을 수 있어 selectDistinct로 한 장만 남긴다.
+   * 정렬은 아티스트 이름순 — 그 다음 제목순으로 묶어 같은 아티스트 앨범이 나란히 오게 한다.
+   */
+  async listAllPickedAlbums(): Promise<AlbumRow[]> {
+    const dbc = await withDb();
+    const rows = await dbc
+      .selectDistinct({ album: schema.albums })
+      .from(schema.monthlyPicks)
+      .innerJoin(schema.albums, eq(schema.monthlyPicks.albumId, schema.albums.id))
+      .orderBy(asc(schema.albums.artist), asc(schema.albums.title));
+
+    // 앨범 id로 한 번 더 걸러낸다. selectDistinct는 "선택한 컬럼 전부가 같은 행"을 지우는 것이라,
+    // 지금은 albums 컬럼만 고르고 있어 의도대로 동작하지만 — 나중에 여기에 monthly_picks의
+    // 컬럼(예: year_month)을 하나라도 더 얹는 순간 DISTINCT가 조용히 무력해져 같은 앨범이
+    // 달 수만큼 중복으로 깔린다. 월간 추천은 여러 달에 같은 앨범을 넣을 수 있으니 실제로 터진다.
+    const seen = new Set<number>();
+    return rows.map((r) => r.album).filter((a) => !seen.has(a.id) && seen.add(a.id));
+  },
+
+  /**
    * 관리자: 해당 월의 추천 목록을 통째로 교체(기존 행 삭제 후 재삽입). 부분 수정 대신 전체 교체라
    * 순서 재배열·삭제·추가를 한 번의 저장으로 처리할 수 있다. albumIds 배열 순서가 곧 position(1부터).
    * 최대 10장까지만 반영하고 초과분은 잘라낸다.

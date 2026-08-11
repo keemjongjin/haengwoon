@@ -10,7 +10,13 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { todayKST } from "@/lib/format";
-import { LP_COLOR_PRESETS, LP_PATTERNS, lpSurface, type LpPattern } from "@/lib/media/lpDesign";
+import {
+  LP_COLOR_PRESETS,
+  LP_PATTERNS,
+  LP_PATTERNS_WITHOUT_COLOR,
+  lpSurface,
+  type LpPattern,
+} from "@/lib/media/lpDesign";
 import { useAdminToast, describeFailure } from "./AdminToastContext";
 
 const MAX_PICKS = 10;
@@ -88,8 +94,8 @@ function LpDesignEditor({
             ))}
           </select>
 
-          {/* classic은 항상 검정이라 색 선택이 의미가 없다 — 헷갈리지 않게 감춘다 */}
-          {pattern !== "classic" && (
+          {/* 블랙·픽쳐 디스크는 고른 색을 쓰지 않는다 — 헷갈리지 않게 색 선택을 감춘다 */}
+          {!LP_PATTERNS_WITHOUT_COLOR.includes(pattern) && (
             <>
               <p className="mb-2 text-[11px] font-medium text-mut">판 색</p>
               <div className="flex flex-wrap gap-1.5">

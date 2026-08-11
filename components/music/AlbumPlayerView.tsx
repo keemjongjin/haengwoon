@@ -41,6 +41,25 @@ type PlayerAlbum = {
   lpPattern: string | null;
 };
 
+// ── 톤암 기하 ──────────────────────────────────────────────────────────────────
+// 컨테이너 폭을 W라 하면 (aspect 1.45 → 높이 H = 0.690W), 판은 지름 0.62W이고
+// 중심은 재생 시 (0.69W, 0.345W) / 정지 시 (0.57W, 0.345W)에 온다.
+//
+// ★ 피벗은 반드시 판 **바깥**이어야 한다. 실제 턴테이블도 회전축은 플래터 옆에 있고
+//   팔만 판 위로 뻗는다. 예전에는 피벗이 판 영역 위에 얹혀 관절이 판을 밟고 있었다.
+//   여기서 피벗(0.95W, 0.069W)은 재생 시 판 중심에서 0.357W 떨어져 있어 반지름 0.31W보다
+//   확실히 바깥이다(여유 ≈ 0.047W).
+const ARM_RIGHT_PCT = 0.05; // 컨테이너 오른쪽에서 피벗까지
+const ARM_TOP_PCT = 0.1; // 컨테이너 위에서 피벗까지
+const ARM_WIDTH = 10; // 톤암 래퍼 폭(px) — 피벗 x를 중심으로 잡을 때 절반을 뺀다
+const STYLUS_OVERHANG = 13; // 래퍼 아래로 더 나온 바늘 끝(px)
+// 팁 = 피벗 + L·(−sinθ, cosθ) → 양수 θ가 팁을 왼쪽(판 안쪽)으로 보낸다.
+const ARM_PLAY_DEG = 4; // 팁이 중심에서 약 0.86r — 첫 곡이 시작되는 바깥쪽 홈
+const ARM_REST_DEG = -6; // 판 오른쪽 바깥 암 레스트에 park
+// 드래그로 팔을 휘두를 수 있는 범위. 판을 넘어 왼쪽으로 넘어가거나 뒤로 꺾이지 않게 막는다.
+const ARM_MIN_DEG = -14;
+const ARM_MAX_DEG = 24;
+
 function formatDuration(ms: number | null): string {
   if (!ms) return "";
   const total = Math.round(ms / 1000);
@@ -88,6 +107,7 @@ function Turntable({
   spinning,
   lpColor,
   lpPattern,
+  onNeedleDrop,
 }: {
   coverImageUrl: string | null;
   title: string;
@@ -95,22 +115,96 @@ function Turntable({
   spinning: boolean;
   lpColor: string | null;
   lpPattern: string | null;
+  /** 바늘을 판 위에 내려놓으면 true, 판 밖으로 치우면 false로 불린다. */
+  onNeedleDrop: (onRecord: boolean) => void;
 }) {
   const cover = useCoverColor(coverImageUrl);
   const surface = lpSurface(lpColor, lpPattern);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const discBoxRef = useRef<HTMLDivElement>(null);
+  const armRef = useRef<HTMLDivElement>(null);
+  // 커버를 누르면 판 위로 올라온다(다시 누르면 원래대로).
+  const [coverOnTop, setCoverOnTop] = useState(false);
+  // 드래그 중일 때만 각도를 직접 쥔다. null이면 재생 상태가 각도를 정한다.
+  const [dragAngle, setDragAngle] = useState<number | null>(null);
+  const angle = dragAngle ?? (spinning ? ARM_PLAY_DEG : ARM_REST_DEG);
+
+  /** 톤암의 회전 중심(피벗)과 바늘까지의 길이를 지금 화면 크기에서 실측한다. */
+  function armGeometry() {
+    const box = boxRef.current;
+    const arm = armRef.current;
+    if (!box || !arm) return null;
+    const r = box.getBoundingClientRect();
+    return {
+      px: r.right - r.width * ARM_RIGHT_PCT - ARM_WIDTH / 2,
+      py: r.top + r.height * ARM_TOP_PCT,
+      // offsetHeight는 회전과 무관한 레이아웃 높이 — rect를 쓰면 회전 때문에 값이 커진다
+      len: arm.offsetHeight + STYLUS_OVERHANG,
+    };
+  }
+
+  /** 포인터 위치 → 톤암 각도(deg). 팁 = 피벗 + L·(−sinθ, cosθ) 관계를 뒤집은 것. */
+  function angleFromPointer(clientX: number, clientY: number): number {
+    const g = armGeometry();
+    if (!g) return angle;
+    const deg = (Math.atan2(-(clientX - g.px), clientY - g.py) * 180) / Math.PI;
+    return Math.min(ARM_MAX_DEG, Math.max(ARM_MIN_DEG, deg));
+  }
+
+  /** 그 각도에서 바늘 끝이 판 위에 있는지. 판은 회전 중이라 지름은 offsetWidth로 잰다. */
+  function isOnRecord(deg: number): boolean {
+    const g = armGeometry();
+    const disc = discBoxRef.current;
+    if (!g || !disc) return false;
+    const d = disc.getBoundingClientRect();
+    const cx = d.left + d.width / 2;
+    const cy = d.top + d.height / 2;
+    const radius = disc.offsetWidth / 2;
+    const rad = (deg * Math.PI) / 180;
+    const tipX = g.px - g.len * Math.sin(rad);
+    const tipY = g.py + g.len * Math.cos(rad);
+    return Math.hypot(tipX - cx, tipY - cy) <= radius;
+  }
+
+  // 마우스로 바늘을 집어 판에 올리면 재생, 판 밖으로 치우면 정지.
+  // window에 리스너를 붙이는 이유는 트랙 리스트 드래그와 같다 — setPointerCapture를 쓰면
+  // 브라우저가 click 타깃을 캡처 요소로 바꿔버려 다른 컨트롤이 먹통이 된다.
+  function onArmPointerDown(e: React.PointerEvent) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    setDragAngle(angleFromPointer(e.clientX, e.clientY));
+
+    const move = (ev: PointerEvent) => setDragAngle(angleFromPointer(ev.clientX, ev.clientY));
+    const up = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      const finalDeg = angleFromPointer(ev.clientX, ev.clientY);
+      setDragAngle(null); // 각도 결정권을 다시 재생 상태에 넘긴다
+      onNeedleDrop(isOnRecord(finalDeg));
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+
   return (
     // 넓은 화면에서는 왼쪽 영역을 통째로 쓰므로 판을 크게 키운다.
     // 내부 배치가 전부 %라서 크기가 변해도 톤암 각도(아래)를 다시 잡을 필요는 없다.
-    // 판(최대 1.06W)과 park한 톤암(최대 ~1.09W)은 이 상자보다 오른쪽으로 조금 삐져나온다.
-    // 좁은 화면에서 폭을 더 줄여두는 건 그 여유분까지 화면 안에 들어오게 하려는 것.
-    <div className="relative aspect-[1.45/1] w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[580px] xl:max-w-[660px]">
+    <div
+      ref={boxRef}
+      className="relative aspect-[1.45/1] w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[580px] xl:max-w-[660px]"
+    >
       {/* LP — 재생 중이면 자켓 밖으로 더 빠져나오면서 회전.
           z-[5]: 판이 자켓 **위로** 얹혀 돌아야 한다(턴테이블에 판을 올려둔 모습).
           예전엔 자켓이 뒤 DOM 순서라 판을 덮어, 판이 자켓 뒤로 들어간 것처럼 보였다.
           톤암(z-10)보다는 아래여야 바늘이 판 위에 놓인다. */}
       <div
-        className="absolute left-[26%] top-1/2 z-[5] aspect-square w-[68%] -translate-y-1/2 transition-[left] duration-700 ease-out"
-        style={{ left: spinning ? "38%" : "26%" }}
+        ref={discBoxRef}
+        className="absolute top-1/2 aspect-square w-[62%] -translate-y-1/2 transition-[left] duration-700 ease-out"
+        // 정지 시 판이 자켓 안으로 너무 깊이 들어가면, 바늘을 끌어다 올리려 해도 판에 닿지 않는다.
+        // 30%→38%로 이동 폭을 줄여 멈춰 있을 때도 판이 충분히 나와 있게 한다.
+        style={{ left: spinning ? "38%" : "30%", zIndex: coverOnTop ? 4 : 6 }}
       >
         {/* ring/그림자: 다크 모드에서 검은 판이 어두운 배경에 그대로 묻히는 걸 막는다.
             ★ Safari 대응: 판의 존재감을 그라디언트에 의존시키지 않는다. 예전엔 background 단축
@@ -119,8 +213,20 @@ function Turntable({
             backgroundColor(단색)를 바닥에 깔고 그루브는 backgroundImage로 얹어, 그루브가 실패해도
             검은 원반은 반드시 보이게 한다. 그루브 간격도 3/6px로 넓혀 Safari 부담을 줄였다.
             translateZ(0)는 회전 애니메이션 중 배경이 깜빡이는 Safari 합성 이슈 예방용. */}
+        {/* 판이 바닥에서 떠 있는 느낌을 내는 그림자.
+            ★ 회전하는 판 자체에 box-shadow를 주면 안 된다 — 그림자도 같이 돌아서 판 둘레를
+              빙빙 도는 이상한 그림이 된다(예전 shadow-xl이 그랬다). 돌지 않는 이 층에 얹는다.
+            아래로 살짝 내려 깔아야 "떠 있다"로 읽힌다. */}
+        {/* 그림자는 판 가장자리에서 곧바로 이어져야 한다.
+            ★ 아래로 미는 양은 "offsetY − spread"가 전부다. 예전엔 레이어 자체를 10px 내리고
+              그 위에 offsetY 22 / spread −14를 얹어 총 18px이 떠버렸고, 그 틈으로 배경이 비쳐
+              그림자가 판에서 떨어져 어긋나 보였다. 지금은 10 − 10 = 0으로 딱 붙인다. */}
         <div
-          className="h-full w-full rounded-full shadow-xl ring-1 ring-black/20 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.14),0_10px_40px_rgba(0,0,0,0.7)] dark:ring-white/15"
+          className="pointer-events-none absolute inset-0 rounded-full shadow-[0_10px_26px_-10px_rgba(0,0,0,0.5)] dark:shadow-[0_12px_32px_-10px_rgba(0,0,0,0.8)]"
+          aria-hidden="true"
+        />
+        <div
+          className="relative h-full w-full rounded-full ring-1 ring-black/20 dark:ring-white/15"
           style={{
             // 색·무늬는 관리자가 앨범별로 지정한 값에서 온다. lpSurface가 단색(backgroundColor)과
             // 무늬(backgroundImage)를 분리해 돌려주므로 위의 Safari 대비도 그대로 유지된다.
@@ -132,6 +238,30 @@ function Turntable({
             willChange: "transform",
           }}
         >
+          {/* 픽쳐 디스크 — 커버가 판 면에 인쇄된 판. 배경 그라디언트로는 그림을 못 넣으니
+              이미지 레이어를 따로 깔고, 그 위에 어두운 홈을 얹어 "인쇄된 판"으로 읽히게 한다
+              (밝은 그림 위에서는 기본 흰 홈이 보이지 않는다). */}
+          {surface.picture && coverImageUrl && (
+            <>
+              <Image
+                src={coverImageUrl}
+                alt=""
+                fill
+                sizes="500px"
+                className="pointer-events-none rounded-full object-cover"
+              />
+              {/* 홈 + 테두리. 자켓과 같은 그림이 판에도 인쇄돼 있어, 판이 자켓에 겹치는
+                  왼쪽에서는 원의 경계가 사라진다. 안쪽 테두리를 넣어 "판"임을 잃지 않게 한다. */}
+              <div
+                className="pointer-events-none absolute inset-0 rounded-full"
+                style={{
+                  backgroundImage: surface.pictureGrooves,
+                  boxShadow: "inset 0 0 0 3px rgba(0,0,0,0.35), inset 0 0 22px rgba(0,0,0,0.28)",
+                }}
+              />
+            </>
+          )}
+
           {/* 가운데 라벨 — 실제 LP처럼 커버에서 뽑은 색 위에 제목·아티스트를 찍는다.
               커버 이미지를 그대로 넣으면 왼쪽 자켓과 똑같은 그림이 두 번 나와 단조롭고,
               작게 줄어든 사진은 어차피 알아보기도 어렵다. 스핀들 홀을 사이에 두고
@@ -165,18 +295,39 @@ function Turntable({
         </div>
       </div>
 
-      {/* 자켓(커버) — LP보다 앞에 서서 판이 안에서 빠져나온 것처럼 보이게 한다 */}
-      <div className="absolute left-0 top-1/2 aspect-square w-[62%] -translate-y-1/2 overflow-hidden rounded-[3px] shadow-2xl">
-        {coverImageUrl ? (
-          <Image src={coverImageUrl} alt={title} fill sizes="200px" className="object-cover" priority />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-card text-3xl font-bold text-mut">
-            {title.slice(0, 1)}
-          </div>
-        )}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/25" />
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/30 to-transparent" />
-      </div>
+      {/* 자켓(커버) — 판과 같은 크기. 누르면 판 위/아래를 오간다.
+          기본은 판이 위(턴테이블에 판을 얹은 모습)지만, 커버 그림을 통째로 보고 싶을 때가 있어
+          커버를 누르면 앞으로 나오게 했다. 한 번 더 누르면 원래대로. */}
+      <button
+        type="button"
+        onClick={() => setCoverOnTop((v) => !v)}
+        aria-label={coverOnTop ? `${title} 커버 뒤로 보내기` : `${title} 커버 앞으로 가져오기`}
+        aria-pressed={coverOnTop}
+        className="absolute left-0 top-1/2 aspect-square w-[62%] -translate-y-1/2 cursor-pointer"
+        style={{ zIndex: coverOnTop ? 6 : 4 }}
+      >
+        {/* 움직임은 이 안쪽 층에서만 준다.
+            ① 버튼에는 -translate-y-1/2가 걸려 있어 여기에 transform을 또 쓰면 서로 덮어쓴다.
+            ② 앞으로 나올 때 살짝 커지므로 잘림 방지를 위해 overflow-hidden도 안쪽으로 옮겼다.
+            판 쪽(오른쪽)으로 밀며 커지는 움직임이라 "자켓을 집어 앞으로 빼든다"로 읽힌다. */}
+        <div
+          className={
+            "relative h-full w-full overflow-hidden rounded-[3px] transition-[transform,box-shadow] duration-500 ease-out " +
+            (coverOnTop ? "shadow-[0_18px_50px_rgba(0,0,0,0.45)]" : "shadow-2xl")
+          }
+          style={{ transform: coverOnTop ? "translateX(8%) scale(1.05)" : "translateX(0) scale(1)" }}
+        >
+          {coverImageUrl ? (
+            <Image src={coverImageUrl} alt={title} fill sizes="400px" className="object-cover" priority />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-card text-3xl font-bold text-mut">
+              {title.slice(0, 1)}
+            </div>
+          )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/25" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/30 to-transparent" />
+        </div>
+      </button>
 
       {/* 톤암 — 피벗에서 아래로 늘어뜨린 구조 전체를 회전시킨다(origin: top center).
           정지 시 거의 수직으로 판 바깥(암 레스트)에, 재생 시 안쪽으로 swing해 판 위에 얹힌다.
@@ -184,26 +335,25 @@ function Turntable({
           금속 질감은 좌우로 흐르는 밝기 그라디언트(위→아래가 아니라 가로 방향)로 낸다 —
           원통에 빛이 스치는 하이라이트가 입체감의 핵심. */}
       <div
-        className="absolute z-10 transition-transform duration-700 ease-out"
+        ref={armRef}
+        onPointerDown={onArmPointerDown}
+        // 장식이 아니라 집어서 옮길 수 있는 물건이 됐다. 다만 같은 동작(재생/정지)은 옆의
+        // "전체 재생" 버튼으로 키보드·보조기술에서 이미 가능하므로, 여기서는 중복 컨트롤로
+        // 두고 aria-hidden을 유지한다(키보드로 각도를 미세 조정하게 만드는 건 과하다).
+        className={
+          "absolute z-10 touch-none " +
+          (dragAngle === null ? "cursor-grab transition-transform duration-700 ease-out" : "cursor-grabbing")
+        }
         style={{
-          right: "7%",
-          top: "10%",
-          width: 10,
-          height: "46%",
+          right: `${ARM_RIGHT_PCT * 100}%`,
+          top: `${ARM_TOP_PCT * 100}%`,
+          width: ARM_WIDTH,
+          height: "58%",
           transformOrigin: "top center",
-          // ── 각도는 눈대중이 아니라 이 컴포넌트의 기하로 역산한 값이다 ─────────────────
-          // 컨테이너 폭을 W라 하면 (aspect 1.45 → 높이 H = 0.690W)
-          //   피벗    ≈ (0.93W, 0.069W)          [right:7%, top:10%, origin: top center]
-          //   암 길이 L = 0.46H + 13px = 0.317W + 13px   (13px = 스타일러스 팁의 -bottom 오프셋)
-          //   LP 반지름 r = 0.34W, 중심 y = 0.345W
-          //   LP 중심 x = 0.72W (재생, left 38%) / 0.60W (정지, left 26%)
-          // 회전 θ에 대해 팁 = (pivot.x − L·sinθ, pivot.y + L·cosθ) 이므로
-          // **음수 θ = 시계방향 = 팁이 오른쪽(판 바깥)으로**, θ가 커질수록 판 안쪽으로 들어온다.
-          //   재생 −12° → 팁이 중심에서 약 0.82~0.85r  (첫 곡이 시작되는 바깥쪽 홈) ✔
-          //   정지 −26° → 약 1.4r, 판 오른쪽 바깥 암 레스트에 park ✔
-          // (예전에 rect 기반으로 피벗을 재다가 값이 틀렸다 — 회전된 요소의 getBoundingClientRect는
-          //  회전 후의 축정렬 박스라 피벗 좌표가 아니다. 그래서 부호를 반대로 잡았었다.)
-          transform: `rotate(${spinning ? -12 : -26}deg)`,
+          // 각도 근거는 파일 상단 "톤암 기하" 주석 참고. 드래그 중이면 손이 각도를 쥔다.
+          // (피벗 좌표를 rect로 재면 안 된다 — 회전된 요소의 getBoundingClientRect는 회전 후의
+          //  축정렬 박스라 피벗이 아니다. 그래서 armGeometry()는 컨테이너 rect + %로 계산한다.)
+          transform: `rotate(${angle}deg)`,
           filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.35))",
         }}
         aria-hidden="true"
@@ -460,6 +610,19 @@ export function AlbumPlayerView({ albumId, onClose }: { albumId: number; onClose
                 spinning={spinning}
                 lpColor={album.lpColor}
                 lpPattern={album.lpPattern}
+                // 바늘을 판에 올리면 재생, 판 밖으로 치우면 정지 — 실물을 다루는 감각 그대로.
+                // 이미 그 상태면 아무것도 하지 않는다(판 위에서 놓았는데 다시 첫 곡으로
+                // 되감기면 당황스럽다).
+                onNeedleDrop={(onRecord) => {
+                  if (onRecord) {
+                    if (spinning) return;
+                    if (spotifyPlaying) fullPlayback?.togglePlay();
+                    playQueue(playable());
+                  } else {
+                    if (previewPlaying) pause();
+                    if (spotifyPlaying) fullPlayback?.togglePlay();
+                  }
+                }}
               />
             </div>
 
