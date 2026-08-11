@@ -18,7 +18,12 @@ export type GridAlbum = {
   coverImageUrl: string | null;
 };
 
-/** 한 번에 더 보여줄 장수. 데스크톱에서 5열 × 2줄 = 정확히 한 판이 채워진다. */
+/**
+ * 한 번에 더 보여줄 장수.
+ * 열 수가 화면 크기에 따라 다르므로(모바일 5 / 큰 화면 7) 어느 쪽에도 딱 떨어지지는 않는다.
+ * 열 수에 맞춰 바꾸는 대신 10으로 고정해 둔다 — "한 번에 10장"이 사람이 세기 쉬운 단위고,
+ * 줄이 반쯤 차는 건 어차피 다음 10장이 이어 붙으면서 메워진다.
+ */
 const PAGE = 10;
 
 export function PickedAlbumGrid({
@@ -75,8 +80,10 @@ export function PickedAlbumGrid({
         <span className="text-[11px] tabular-nums text-mut/60">{albums.length}</span>
       </div>
 
-      {/* 체스판처럼 촘촘한 정사각 격자. 데스크톱 5열이라 한 번에 불러오는 10장이 딱 두 줄이 된다. */}
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5">
+      {/* 체스판처럼 촘촘한 정사각 격자 — 큰 화면 7열, 좁은 화면 5열.
+          좁은 화면에서도 5열을 유지하니 한 칸이 60px 남짓으로 작아진다. 커버는 그 크기에서도
+          무슨 앨범인지 알아볼 수 있어서, 한눈에 훑는다는 이 영역의 목적에는 오히려 맞다. */}
+      <ul className="grid grid-cols-5 gap-2 md:grid-cols-7">
         {albums.slice(0, shown).map((a) => (
           <li key={a.id}>
             <button
@@ -101,11 +108,15 @@ export function PickedAlbumGrid({
               {/* 호버하면 커버 전체를 반투명 회색으로 덮고 가운데에 제목·아티스트.
                   아래쪽 그라디언트에 작은 글씨를 얹던 방식은 커버 그림이 밝으면 글자가 묻혔다.
                   면 전체를 덮으면 어떤 커버 위에서도 대비가 일정하다. */}
-              <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-neutral-900/65 px-2 text-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                <span className="line-clamp-3 text-[12px] font-semibold leading-snug text-white">
+              {/* 글자 크기는 칸 크기를 따라간다 — 좁은 화면의 60px 칸에 12px 글자를 그대로
+                  쓰면 두어 글자 만에 잘려 제목을 알아볼 수 없다. */}
+              <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-neutral-900/65 px-1 text-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 md:gap-1 md:px-2">
+                <span className="line-clamp-3 text-[9px] font-semibold leading-snug text-white md:text-[12px]">
                   {a.title}
                 </span>
-                <span className="line-clamp-2 text-[11px] leading-snug text-white/70">{a.artist}</span>
+                <span className="line-clamp-2 text-[8px] leading-snug text-white/70 md:text-[11px]">
+                  {a.artist}
+                </span>
               </span>
             </button>
           </li>
