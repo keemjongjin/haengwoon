@@ -324,8 +324,11 @@ function Turntable({
               {title.slice(0, 1)}
             </div>
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/25" />
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/30 to-transparent" />
+          {/* 커버 위에 어둡게 까는 층은 두지 않는다(우하단 그늘, 왼쪽 접힘 그림자 모두 제거).
+              입체감은 자켓 뒤로 드리우는 그림자(위 shadow-*)가 이미 내주는데, 그림 위에까지
+              검은 기울기를 얹으면 커버 아트만 탁해진다. 남긴 건 좌상단 하이라이트뿐 —
+              진열대 케이스와 같은 처리다. */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/15 to-transparent" />
         </div>
       </button>
 
