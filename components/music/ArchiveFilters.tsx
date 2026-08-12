@@ -31,8 +31,28 @@ function isDateBasis(b: Basis): boolean {
   return b === "review" || b === "release";
 }
 
-function yearOf(d: string | null): string {
-  return d ? d.slice(0, 4) : "?";
+/**
+ * 이 연도부터는 한 해씩, 그 이전은 10년 단위로 묶는다.
+ * 발매일 기준으로 보면 연도가 수십 개로 늘어나 필터 줄이 화면을 몇 줄씩 잡아먹는데,
+ * 오래된 앨범일수록 "몇 년도"보다 "어느 연대"로 기억하고 찾는다.
+ */
+const DECADE_CUTOFF = 2010;
+
+/**
+ * 필터에 쓸 구간 이름. groupDecades면 DECADE_CUTOFF 이전을 "1990s"처럼 묶는다.
+ * 리뷰일 기준에는 묶지 않는다 — 리뷰는 이 사이트를 만든 뒤로만 쌓여 연도가 몇 개 안 된다.
+ */
+function bucketOf(d: string | null, groupDecades: boolean): string {
+  if (!d) return "?";
+  const y = Number(d.slice(0, 4));
+  if (!Number.isFinite(y)) return "?";
+  if (!groupDecades || y >= DECADE_CUTOFF) return String(y);
+  return `${Math.floor(y / 10) * 10}s`;
+}
+
+/** 최신이 위로 오도록 정렬할 때 쓰는 값. "2000s" → 2000, 발매일이 없는 "?"는 맨 뒤로. */
+function bucketOrder(bucket: string): number {
+  return bucket === "?" ? -1 : parseInt(bucket, 10);
 }
 
 /** 정렬 기준·연도·장르 필터 툴바 + 필터링된 앨범 카드 목록(페이지네이션 포함). */
@@ -52,9 +72,16 @@ export function ArchiveFilters({
   // 연도 필터는 항상 적용됨 — 발매일 기준일 땐 releaseDate, 그 외(리뷰일/평점순/좋아요순)엔 reviewDate를 쓴다.
   const dateOf = (a: ArchiveAlbum) => (basis === "release" ? a.releaseDate : a.reviewDate);
 
+  // 발매일 기준일 때만 오래된 연도를 10년 단위로 묶는다.
+  const groupDecades = basis === "release";
+
   const years = useMemo(
-    () =>
-      ["전체", ...Array.from(new Set(albums.map((a) => yearOf(dateOf(a))))).sort().reverse()],
+    () => [
+      "전체",
+      ...Array.from(new Set(albums.map((a) => bucketOf(dateOf(a), groupDecades)))).sort(
+        (a, b) => bucketOrder(b) - bucketOrder(a)
+      ),
+    ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [albums, basis]
   );
@@ -66,7 +93,7 @@ export function ArchiveFilters({
   const shown = albums
     .filter(
       (a) =>
-        (year === "전체" || yearOf(dateOf(a)) === year) &&
+        (year === "전체" || bucketOf(dateOf(a), groupDecades) === year) &&
         (genre === "전체" || a.genre === genre)
     )
     .sort((a, b) => {
