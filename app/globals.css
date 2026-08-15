@@ -103,6 +103,34 @@ body {
   color: var(--acc);
   text-decoration: underline;
 }
+.article strong {
+  /* 파스텔톤 연두 — --acc를 재사용하지 않는다. Tech 라이트 모드는 --fg와 --acc가
+     같은 값(#0f1010)이라 재사용하면 글자색과 구분이 안 된다. 라이트/다크 두 톤을
+     따로 둬 밝은 배경·어두운 배경 양쪽에서 파스텔감이 유지되도록 한다. */
+  color: #5b8a2f;
+  font-weight: 700;
+}
+:root[data-theme="dark"] .article strong {
+  color: #b6e388;
+}
+.article table {
+  display: block; /* 표가 넓어지면 페이지 전체가 밀리는 대신 표 안에서만 가로 스크롤 */
+  width: 100%;
+  margin: 1.25rem 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.article th,
+.article td {
+  border: 0.5px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.article th {
+  background: var(--card);
+  font-weight: 600;
+}
 .article :not(pre) > code {
   background: var(--card);
   border: 0.5px solid var(--line);

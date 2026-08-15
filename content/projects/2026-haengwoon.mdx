@@ -1,15 +1,7 @@
----
-title: "개인 포트폴리오 및 음악 아카이브 플랫폼"
-description: "기술 블로그와 음악 아카이브를 결합한 개인 포트폴리오 플랫폼."
-pubDate: "2026-07-17"
-tags: ["Next.js", "TypeScript", "Drizzle", "Neon"]
----
-
 ## 프로젝트 소개
 
 기술 블로그와 음악 디깅 아카이브를 한곳에서 운영하는 개인 풀스택 웹 플랫폼입니다. 기존 정적 블로그 서비스의 한계와 음악 평점 플랫폼의 폐쇄성을 극복하고, 마크다운 기반 콘텐츠 관리와 동적 데이터베이스 상호작용을 일관된 경험으로 통합하고자 제작하였습니다.
 
----
 
 ## 프로젝트 개요
 
@@ -20,7 +12,6 @@ tags: ["Next.js", "TypeScript", "Drizzle", "Neon"]
 | 저장소 | github.com/keemjongjin/haengwoon |
 | 서비스 | https://haengwoon.vercel.app/ |
 
----
 
 ## 기술 스택
 
@@ -35,7 +26,6 @@ tags: ["Next.js", "TypeScript", "Drizzle", "Neon"]
 | 테스트 | Vitest |
 | 배포 | Vercel |
 
----
 
 ## 주요 기능
 
@@ -67,7 +57,6 @@ tags: ["Next.js", "TypeScript", "Drizzle", "Neon"]
 - **반응형 UI** — 모바일에서 헤더 축소, 로고를 아이콘으로 전환, 본문 폭 통일
 - **관리자** — 단일 패스워드 인증(JWT) + 통합 관리 페이지에서 글·음악·댓글 관리
 
----
 
 ## 아키텍처
 
@@ -83,7 +72,6 @@ lib/          db(schema·repo) · music(elo) · integrations(spotify·deezer)
 - **어댑터 + 목(mock)** — 외부 API 키가 없어도 전체 흐름이 동작하도록 분리
 - **Elo 엔진 단위 테스트** — 점수 산출 로직 8개 케이스 검증
 
----
 
 ## 릴리즈 내역
 
@@ -97,7 +85,6 @@ lib/          db(schema·repo) · music(elo) · integrations(spotify·deezer)
 - **감상 집중형 앨범 뷰 개편:** 진열대 선택 시 평점/코멘트를 배제한 음원 감상 전용 인터페이스 제공
 - **음원 재생 파이프라인 이원화:** Deezer 30초 미리듣기와 Spotify 풀 트랙 재생 엔진 분리 및 재생바 UI 상태 분기
 
----
 
 ## 트러블 슈팅
 

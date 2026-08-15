@@ -5,8 +5,8 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import readingTime from "reading-time";
-import GithubSlugger from "github-slugger";
 import { repo } from "@/lib/db/repo";
+import { extractToc, type TocItem } from "./toc";
 
 const POSTS_DIR = path.join(process.cwd(), "content", "posts");
 
@@ -23,9 +23,6 @@ export type PostMeta = {
   /** reading-time으로 추정한 예상 읽기 시간(분). 최소 1분으로 내림 방지. */
   readingMinutes: number;
 };
-
-/** 상세 페이지 목차(TOC) 한 줄 — depth 2/3(##/###)만 뽑는다. */
-export type TocItem = { depth: number; text: string; slug: string };
 
 /** 상세 페이지에서 쓰는 전체 글 데이터: 메타 + 원문 마크다운 + 목차. */
 export type Post = PostMeta & { content: string; toc: TocItem[] };
@@ -76,20 +73,6 @@ export async function getVisiblePosts(): Promise<PostMeta[]> {
 /** 현재 존재하는 글들의 category 값을 중복 제거해서 반환 (필터 UI용). */
 export function getCategories(): string[] {
   return Array.from(new Set(getAllPosts().map((p) => p.category)));
-}
-
-// ## / ### 헤딩을 뽑아 목차 생성. rehype-slug와 동일한 github-slugger 사용 → 앵커 일치.
-function extractToc(content: string): TocItem[] {
-  const slugger = new GithubSlugger();
-  const items: TocItem[] = [];
-  for (const line of content.split("\n")) {
-    const m = /^(#{2,3})\s+(.+)$/.exec(line.trim());
-    if (m) {
-      const text = m[2].trim();
-      items.push({ depth: m[1].length, text, slug: slugger.slug(text) });
-    }
-  }
-  return items;
 }
 
 /** 상세 페이지용 — 메타데이터에 원문 마크다운과 목차를 더해 반환. */

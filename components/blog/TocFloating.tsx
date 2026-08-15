@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { TocItem } from "@/lib/content/posts";
+import type { TocItem } from "@/lib/content/toc";
 
 /**
  * Velog 스타일 플로팅 TOC. 넓은 화면(xl+)에서 본문 우측에 고정, IntersectionObserver로

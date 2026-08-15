@@ -1,4 +1,4 @@
-import type { TocItem } from "@/lib/content/posts";
+import type { TocItem } from "@/lib/content/toc";
 
 /** 글 목차(ToC) — 좁은 화면(xl 미만)용 인라인 버전. 넓은 화면은 TocFloating이 대신 뜬다. */
 export function Toc({ items }: { items: TocItem[] }) {
