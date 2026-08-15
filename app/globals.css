@@ -73,8 +73,18 @@ body {
 }
 
 /* MDX 본문 타이포그래피 */
+/* 앨범 평점 7.5+ 일 때 쓰는 초록(lib/music/rating.ts의 green-500)과 같은 값.
+   글 강조 요소(볼드·인라인 코드·인용문)를 전부 이 한 색으로 묶는다 — 이전엔 강조마다
+   색이 따로 놀거나(볼드만 칙칙한 올리브 톤) 아예 무채색이었다(인라인 코드). */
+:root {
+  --article-accent: #22c55e;
+}
+
 .article {
   line-height: 1.8;
+}
+.article > :first-child {
+  margin-top: 0;
 }
 .article h2 {
   font-size: 1.4rem;
@@ -96,22 +106,49 @@ body {
   padding-left: 1.4rem;
   margin: 1rem 0;
 }
+.article ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+  margin: 1rem 0;
+}
 .article li {
+  margin: 0.35rem 0;
+}
+.article li > ul,
+.article li > ol {
   margin: 0.35rem 0;
 }
 .article a {
   color: var(--acc);
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .article strong {
-  /* 파스텔톤 연두 — --acc를 재사용하지 않는다. Tech 라이트 모드는 --fg와 --acc가
-     같은 값(#0f1010)이라 재사용하면 글자색과 구분이 안 된다. 라이트/다크 두 톤을
-     따로 둬 밝은 배경·어두운 배경 양쪽에서 파스텔감이 유지되도록 한다. */
-  color: #5b8a2f;
+  color: var(--article-accent);
   font-weight: 700;
 }
-:root[data-theme="dark"] .article strong {
-  color: #b6e388;
+.article em {
+  color: var(--mut);
+  font-style: italic;
+}
+.article blockquote {
+  margin: 1.25rem 0;
+  padding: 0.25rem 1rem;
+  border-left: 3px solid var(--article-accent);
+  color: var(--mut);
+}
+.article blockquote p {
+  margin: 0.5rem 0;
+}
+.article hr {
+  margin: 2rem 0;
+  border: none;
+  border-top: 1px solid var(--line);
+}
+.article img {
+  max-width: 100%;
+  border-radius: 12px;
+  margin: 1.25rem 0;
 }
 .article table {
   display: block; /* 표가 넓어지면 페이지 전체가 밀리는 대신 표 안에서만 가로 스크롤 */
@@ -132,11 +169,15 @@ body {
   font-weight: 600;
 }
 .article :not(pre) > code {
-  background: var(--card);
-  border: 0.5px solid var(--line);
+  /* color-mix로 배경을 만들면 --card(라이트/다크 각각 흰색·짙은 회색)에 초록을 옅게
+     섞은 값이 자동으로 나와서, 톤 두 벌을 따로 손으로 잡지 않아도 라이트/다크 모두에서
+     "초록끼가 도는 칩"으로 보인다. */
+  color: var(--article-accent);
+  background: color-mix(in srgb, var(--article-accent) 14%, var(--card));
+  border: 0.5px solid color-mix(in srgb, var(--article-accent) 35%, var(--line));
   border-radius: 6px;
-  padding: 0.1em 0.35em;
-  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  font-size: 0.88em;
   font-family: var(--font-mono), monospace;
 }
 .article pre {

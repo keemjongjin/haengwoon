@@ -34,6 +34,8 @@ export type ProjectMeta = {
   thumbnailUrl?: string;
   pubDate: string;
   links?: ProjectLinks;
+  /** content/posts/*.mdx 슬러그. 이 프로젝트를 만들며 쓴 개발기 등을 직접 골라 연결한다. */
+  relatedPostSlugs?: string[];
 };
 
 /** 새 프로젝트는 이 배열에 한 항목 추가 + content/projects/{slug}.mdx 본문 작성으로 끝난다. */
@@ -49,6 +51,7 @@ const PROJECTS: ProjectMeta[] = [
       github: "https://github.com/keemjongjin/haengwoon",
       demo: "https://haengwoon.vercel.app/",
     },
+    relatedPostSlugs: ["260717-dev-haengwoon01"],
   },
 ];
 

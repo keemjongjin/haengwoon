@@ -75,6 +75,17 @@ export function getCategories(): string[] {
   return Array.from(new Set(getAllPosts().map((p) => p.category)));
 }
 
+/**
+ * 슬러그 목록에 해당하는 글 메타데이터를 넘겨준 순서 그대로 반환한다.
+ * "관련 글"처럼 다른 콘텐츠(프로젝트 등)가 특정 글을 콕 집어 참조할 때 쓴다.
+ * 슬러그가 실존하지 않으면(오타·삭제된 글) 조용히 건너뛴다 — 죽은 링크를 렌더하는 것보다
+ * 관련 글 개수가 하나 줄어드는 편이 낫다.
+ */
+export function getPostsBySlugs(slugs: string[]): PostMeta[] {
+  const all = new Map(getAllPosts().map((p) => [p.slug, p]));
+  return slugs.map((s) => all.get(s)).filter((p): p is PostMeta => p !== undefined);
+}
+
 /** 상세 페이지용 — 메타데이터에 원문 마크다운과 목차를 더해 반환. */
 export function getPost(slug: string): Post {
   const { content } = readFile(slug);
