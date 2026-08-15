@@ -69,11 +69,20 @@ export function Header() {
         </Link>
 
         <nav className="ml-auto flex shrink-0 gap-3 text-xs sm:gap-4 sm:text-sm">
-          {NAV[mode].map((item) => (
-            <Link key={item.href} href={item.href} className="text-mut hover:text-fg">
-              {item.label}
-            </Link>
-          ))}
+          {NAV[mode].map((item) => {
+            // 하위 경로(글 상세 등)도 같은 탭이 활성 상태로 보이도록 접두사까지 함께 검사
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={active ? "font-semibold text-fg" : "text-mut hover:text-fg"}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
         <Link
           href={mode === "tech" ? "/search" : "/music/search"}
