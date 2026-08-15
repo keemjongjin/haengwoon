@@ -37,11 +37,11 @@ export default function ProjectsPage() {
           >
             <Link
               href={`/projects/${p.slug}`}
-              className="relative aspect-square w-24 shrink-0 overflow-hidden bg-bg sm:w-36"
+              className="relative aspect-video w-36 shrink-0 overflow-hidden bg-bg sm:w-56"
             >
               {/* 썸네일이 없으면 이니셜 플레이스홀더 — 앨범 커버 없을 때 쓰는 것과 같은 패턴 */}
               {p.thumbnailUrl ? (
-                <Image src={p.thumbnailUrl} alt={p.title} fill sizes="144px" className="object-cover" />
+                <Image src={p.thumbnailUrl} alt={p.title} fill sizes="224px" className="object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-mut sm:text-3xl">
                   {p.title.slice(0, 1)}

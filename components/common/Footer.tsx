@@ -83,9 +83,10 @@ export function Footer() {
           </Link>
         </div>
 
-        {/* 오른쪽: 아이콘 → 저작권. 저작권 문구는 평범해 보이지만 실은 /admin으로 가는 링크다
-            — 일부러 아무 표시(밑줄·색 변화)도 주지 않는다. 눈에 띄면 "숨긴" 의미가 없어진다. */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {/* 오른쪽: 아이콘 줄이 위, 저작권 줄이 아래 — 두 줄 다 왼쪽 끝을 맞춘다(items-start).
+            저작권 문구는 평범해 보이지만 실은 /admin으로 가는 링크다 — 일부러 아무 표시
+            (밑줄·색 변화)도 주지 않는다. 눈에 띄면 "숨긴" 의미가 없어진다. */}
+        <div className="flex flex-col items-start gap-2">
           <div className="flex items-center gap-3.5">
             {SOCIAL.map(({ label, href, external, Icon }) => (
               <a

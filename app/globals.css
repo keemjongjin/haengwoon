@@ -21,6 +21,7 @@
   --color-acc: var(--acc);
   --color-card: var(--card);
   --color-on-acc: var(--on-acc);
+  --color-hover: var(--hover-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -62,6 +63,14 @@
   --acc: #22c55e;
   --card: #161616;
   --on-acc: #08210f;
+}
+
+/* 목록 항목 호버 배경. --fg를 살짝 섞어 배경보다 대비를 높이는 방향으로 움직인다 —
+   라이트 테마에서는 어두운 --fg가 섞여 살짝 어두워지고, 다크 테마에서는 밝은 --fg가 섞여
+   살짝 밝아진다. 테마마다 값을 따로 잡지 않아도 4가지 조합 모두에서 "떠오르는" 느낌이
+   나오는 이유. */
+:root {
+  --hover-bg: color-mix(in srgb, var(--fg) 6%, var(--bg));
 }
 
 body {
