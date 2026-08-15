@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { getVisiblePosts } from "@/lib/content/posts";
-import { formatDate } from "@/lib/format";
+import { PostTitleRow } from "@/components/blog/PostTitleRow";
 
 export const dynamic = "force-dynamic"; // 숨김 여부는 DB 조회 → 매 요청 최신화
 
@@ -18,10 +17,7 @@ export default async function TechHome() {
         <ul>
           {recent.map((p) => (
             <li key={p.slug} className="border-b border-line py-4">
-              <Link href={`/posts/${p.slug}`} className="flex justify-between gap-4 group">
-                <span className="font-medium group-hover:text-acc">{p.title}</span>
-                <span className="shrink-0 text-sm text-mut">{formatDate(p.pubDate)}</span>
-              </Link>
+              <PostTitleRow post={p} />
             </li>
           ))}
         </ul>

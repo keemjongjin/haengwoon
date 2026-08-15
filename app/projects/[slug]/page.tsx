@@ -6,7 +6,7 @@ import { mdxOptions } from "@/lib/content/mdx";
 import { formatDate } from "@/lib/format";
 import { Toc } from "@/components/blog/Toc";
 import { TocFloating } from "@/components/blog/TocFloating";
-import { PostExcerptItem } from "@/components/blog/PostExcerptItem";
+import { PostTitleRow } from "@/components/blog/PostTitleRow";
 import { Comments } from "@/components/features/Comments";
 import { repo } from "@/lib/db/repo";
 import { isAdmin } from "@/lib/security/auth";
@@ -69,15 +69,15 @@ export default async function ProjectPage({
         <MDXRemote source={project.content} options={mdxOptions} />
       </div>
 
-      {/* /posts 목록과 같은 컴포넌트(PostExcerptItem)를 그대로 쓴다 — 마크업을 복사해두면
+      {/* 홈(Recent Posts)과 같은 컴포넌트(PostTitleRow)를 그대로 쓴다 — 마크업을 복사해두면
           한쪽만 스타일이 바뀌었을 때 모양이 갈라진다(실제로 그랬다). */}
       {relatedPosts.length > 0 && (
         <section className="mt-16 border-t border-line pt-8">
           <h2 className="mb-4 text-sm font-medium text-mut">관련 글</h2>
-          <ul className="flex flex-col gap-2">
+          <ul>
             {relatedPosts.map((p) => (
-              <li key={p.slug}>
-                <PostExcerptItem post={p} />
+              <li key={p.slug} className="border-b border-line py-4">
+                <PostTitleRow post={p} />
               </li>
             ))}
           </ul>
