@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import type { PostMeta } from "@/lib/content/posts";
-import { formatDate } from "@/lib/format";
+import { PostExcerptItem } from "./PostExcerptItem";
 
 // 발췌형 목록 + 카테고리 필터 탭 (jeong-min.com /posts 스타일)
 const PAGE_SIZE = 5;
@@ -49,21 +48,10 @@ export function PostList({
         ))}
       </div>
 
-      <ul>
+      <ul className="flex flex-col gap-2">
         {shown.map((p) => (
-          <li key={p.slug} className="border-b border-line py-5">
-            <Link href={`/posts/${p.slug}`} className="block group">
-              <h3 className="text-lg font-semibold group-hover:text-acc">{p.title}</h3>
-              <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-mut">
-                {p.description}
-              </p>
-              <div className="mt-3 flex justify-between text-xs text-mut">
-                <span>
-                  {formatDate(p.pubDate)} · {p.readingMinutes}분
-                </span>
-                <span className="text-acc">{p.category}</span>
-              </div>
-            </Link>
+          <li key={p.slug}>
+            <PostExcerptItem post={p} />
           </li>
         ))}
       </ul>

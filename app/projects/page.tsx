@@ -27,11 +27,17 @@ export default function ProjectsPage() {
         {projects.map((p) => (
           <div
             key={p.slug}
-            className="flex gap-4 overflow-hidden rounded-xl border border-line bg-card p-4 transition-colors hover:border-acc sm:gap-5 sm:p-5"
+            // ★ 패딩을 카드 전체가 아니라 텍스트 쪽 div에만 준다. 이미지는 카드 바깥 틀
+            // (rounded-xl + overflow-hidden)에 바로 맞닿은 채로 두고, 그 틀이 이미지의
+            // 좌측 모서리를 그대로 잘라 둥글린다 — 이미지에 따로 rounded-lg를 주고 카드
+            // 안에 상자 하나를 더 넣는 대신, 라운드 값의 출처를 카드 하나로 통일한 것.
+            // 그래서 카드 반경을 나중에 바꿔도(rounded-xl → rounded-2xl 등) 이미지 쪽을
+            // 따로 맞출 필요가 없다.
+            className="flex overflow-hidden rounded-xl border border-line bg-card transition-colors hover:border-acc"
           >
             <Link
               href={`/projects/${p.slug}`}
-              className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-lg bg-bg sm:w-36"
+              className="relative aspect-square w-24 shrink-0 overflow-hidden bg-bg sm:w-36"
             >
               {/* 썸네일이 없으면 이니셜 플레이스홀더 — 앨범 커버 없을 때 쓰는 것과 같은 패턴 */}
               {p.thumbnailUrl ? (
@@ -45,7 +51,7 @@ export default function ProjectsPage() {
 
             {/* min-w-0: flex 자식은 기본 min-width:auto라 내용이 길면 부모 폭을 밀어낸다.
                 0으로 풀어줘야 태그·배지가 줄바꿈되지 않고 카드 밖으로 삐져나간다. */}
-            <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
               <Link href={`/projects/${p.slug}`}>
                 <h2 className="font-semibold hover:text-acc">{p.title}</h2>
               </Link>

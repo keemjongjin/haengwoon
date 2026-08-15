@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllProjectSlugs, getProject } from "@/lib/content/projects";
 import { getPostsBySlugs } from "@/lib/content/posts";
@@ -7,6 +6,7 @@ import { mdxOptions } from "@/lib/content/mdx";
 import { formatDate } from "@/lib/format";
 import { Toc } from "@/components/blog/Toc";
 import { TocFloating } from "@/components/blog/TocFloating";
+import { PostExcerptItem } from "@/components/blog/PostExcerptItem";
 import { Comments } from "@/components/features/Comments";
 import { repo } from "@/lib/db/repo";
 import { isAdmin } from "@/lib/security/auth";
@@ -69,22 +69,15 @@ export default async function ProjectPage({
         <MDXRemote source={project.content} options={mdxOptions} />
       </div>
 
+      {/* /posts 목록과 같은 컴포넌트(PostExcerptItem)를 그대로 쓴다 — 마크업을 복사해두면
+          한쪽만 스타일이 바뀌었을 때 모양이 갈라진다(실제로 그랬다). */}
       {relatedPosts.length > 0 && (
         <section className="mt-16 border-t border-line pt-8">
           <h2 className="mb-4 text-sm font-medium text-mut">관련 글</h2>
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-2">
             {relatedPosts.map((p) => (
               <li key={p.slug}>
-                <Link
-                  href={`/posts/${p.slug}`}
-                  className="group block rounded-xl border border-line bg-card p-4 transition-colors hover:border-acc"
-                >
-                  <h3 className="font-semibold group-hover:text-acc">{p.title}</h3>
-                  <p className="mt-1 line-clamp-2 text-sm text-mut">{p.description}</p>
-                  <div className="mt-2 text-xs text-mut">
-                    {formatDate(p.pubDate)} · {p.readingMinutes}분 읽기
-                  </div>
-                </Link>
+                <PostExcerptItem post={p} />
               </li>
             ))}
           </ul>

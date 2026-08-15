@@ -76,8 +76,10 @@ export function Footer() {
               {w.label}
             </Link>
           ))}
+          {/* 라벨만 portfolio — 경로는 그대로 /resume. About과 내용이 겹칠 것 같다며
+              이 페이지를 포트폴리오 성격으로 다시 꾸밀 계획이라, 우선 라벨만 맞춰둔다. */}
           <Link href="/resume" className="hover:text-fg">
-            resume
+            portfolio
           </Link>
         </div>
 

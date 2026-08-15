@@ -74,8 +74,8 @@ body {
 
 /* MDX 본문 타이포그래피 */
 /* 앨범 평점 7.5+ 일 때 쓰는 초록(lib/music/rating.ts의 green-500)과 같은 값.
-   글 강조 요소(볼드·인라인 코드·인용문)를 전부 이 한 색으로 묶는다 — 이전엔 강조마다
-   색이 따로 놀거나(볼드만 칙칙한 올리브 톤) 아예 무채색이었다(인라인 코드). */
+   인라인 코드·인용문에 쓴다. 볼드에도 같은 색을 썼었는데, 리스트 항목마다 등장하는
+   빈도가 워낙 높아 초록이 지면을 뒤덮어 눈이 아프다는 피드백으로 볼드만 뺐다. */
 :root {
   --article-accent: #22c55e;
 }
@@ -124,7 +124,8 @@ body {
   text-underline-offset: 2px;
 }
 .article strong {
-  color: var(--article-accent);
+  /* 색은 굳이 안 준다 — 초록으로 물들였더니 볼드가 워낙 자주 나와서(리스트 항목마다) 눈이
+     아프다는 피드백. 굵기만으로 강조하고 색은 본문과 같은 --fg를 그대로 물려받는다. */
   font-weight: 700;
 }
 .article em {
@@ -174,7 +175,6 @@ body {
      "초록끼가 도는 칩"으로 보인다. */
   color: var(--article-accent);
   background: color-mix(in srgb, var(--article-accent) 14%, var(--card));
-  border: 0.5px solid color-mix(in srgb, var(--article-accent) 35%, var(--line));
   border-radius: 6px;
   padding: 0.15em 0.4em;
   font-size: 0.88em;
