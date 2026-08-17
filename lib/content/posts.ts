@@ -19,6 +19,8 @@ export type PostMeta = {
   heroImage?: string;
   category: string;
   tags: string[];
+  /** 프론트매터 relatedSlugs — 이 글과 함께 보여줄 다른 글을 직접 골라 연결(글 상세의 "관련 글"). */
+  relatedSlugs: string[];
 };
 
 /** 상세 페이지에서 쓰는 전체 글 데이터: 메타 + 원문 마크다운 + 목차. */
@@ -40,6 +42,7 @@ function toMeta(slug: string): PostMeta {
     heroImage: data.heroImage,
     category: data.category,
     tags: data.tags ?? [],
+    relatedSlugs: data.relatedSlugs ?? [],
   };
 }
 
