@@ -75,33 +75,31 @@ export function getCategories(): string[] {
 }
 
 /**
- * 슬러그 목록에 해당하는 글 메타데이터를 넘겨준 순서 그대로 반환한다.
- * "관련 글"처럼 다른 콘텐츠(프로젝트 등)가 특정 글을 콕 집어 참조할 때 쓴다.
- * 슬러그가 실존하지 않으면(오타·삭제된 글) 조용히 건너뛴다 — 죽은 링크를 렌더하는 것보다
- * 관련 글 개수가 하나 줄어드는 편이 낫다.
+ * series 값이 일치하는 글을 발행일 **오름차순**(오래된 순, 연재 읽는 순서)으로 반환한다.
+ * 글 상세(getRelatedPosts)뿐 아니라 프로젝트 상세(projects.ts의 series)도 같은 시리즈
+ * 개념을 공유해서 이 함수를 그대로 쓴다 — "이 프로젝트를 만들며 쓴 글들"도 결국 하나의
+ * 시리즈라, 프로젝트 쪽에 relatedPostSlugs를 따로 유지할 필요가 없어졌다.
  */
-export function getPostsBySlugs(slugs: string[]): PostMeta[] {
-  const all = new Map(getAllPosts().map((p) => [p.slug, p]));
-  return slugs.map((s) => all.get(s)).filter((p): p is PostMeta => p !== undefined);
+export function getPostsBySeries(series: string): PostMeta[] {
+  return getAllPosts()
+    .filter((p) => p.series === series)
+    .sort((a, b) => (a.pubDate > b.pubDate ? 1 : a.pubDate < b.pubDate ? -1 : 0));
 }
 
 /**
  * 글 상세의 "관련 글" 후보를 정한다.
- * - series가 있으면: 같은 시리즈의 다른 글을 발행일 **오름차순**(오래된 순)으로 — 연재를
- *   순서대로 읽는 느낌. 새 편을 추가할 때 이 글 저 글 돌아다니며 편집할 필요가 없다, series
- *   값만 맞으면 자동으로 묶인다.
+ * - series가 있으면: 같은 시리즈의 다른 글(자기 자신 제외) — 연재를 순서대로 읽는 느낌.
+ *   새 편을 추가할 때 이 글 저 글 돌아다니며 편집할 필요가 없다, series 값만 맞으면
+ *   자동으로 묶인다.
  * - series가 없으면(개념 설명·논문 분석처럼 독립적인 글): 같은 category의 다른 글을
  *   발행일 **내림차순**(최신 순) — getAllPosts()가 이미 그 순서라 별도 정렬 없이 그대로 쓴다.
  *   /posts 목록의 카테고리 탭과 같은 정렬이라 "그 카테고리를 더 둘러본다"는 느낌과 맞는다.
  */
 export function getRelatedPosts(post: PostMeta): PostMeta[] {
-  const others = getAllPosts().filter((p) => p.slug !== post.slug);
   if (post.series) {
-    return others
-      .filter((p) => p.series === post.series)
-      .sort((a, b) => (a.pubDate > b.pubDate ? 1 : a.pubDate < b.pubDate ? -1 : 0));
+    return getPostsBySeries(post.series).filter((p) => p.slug !== post.slug);
   }
-  return others.filter((p) => p.category === post.category);
+  return getAllPosts().filter((p) => p.slug !== post.slug && p.category === post.category);
 }
 
 /** 상세 페이지용 — 메타데이터에 원문 마크다운과 목차를 더해 반환. */
