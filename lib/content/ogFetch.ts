@@ -22,10 +22,15 @@ function extractMetaTags(html: string): Record<string, string> {
 }
 
 /**
- * url의 HTML을 가져와 og:title/description/image(없으면 twitter:*, <title> 태그로 폴백)를
- * 뽑는다. 실패하면(사이트 다운, 타임아웃, HTML이 아닌 응답, 제목조차 없음) null — 호출부
- * (LinkPreview)가 평범한 링크로 폴백해서 그린다. 페이지 하나가 죽은 외부 링크 때문에
+ * url의 HTML을 가져와 og:title/description/image(og:title 없으면 twitter:title까지만 폴백)를
+ * 뽑는다. 실패하면(사이트 다운, 타임아웃, HTML이 아닌 응답, og/twitter title 둘 다 없음) null
+ * — 호출부(LinkPreview)가 평범한 링크로 폴백해서 그린다. 페이지 하나가 죽은 외부 링크 때문에
  * 통째로 500 나면 안 되므로 여기서 예외를 삼킨다.
+ *
+ * <title> 태그로는 폴백하지 않는다 — 봇 차단 페이지("Client Challenge", "Just a moment...",
+ * "Access Denied" 등)는 og 태그 없이 <title>만 있는 경우가 많아서, 이걸 그대로 받으면 진짜
+ * 콘텐츠 대신 봇 차단 안내문이 카드에 뜬다(nature.com에서 실제로 겪음). og/twitter:title이
+ * 없다는 건 대개 이 페이지 정보를 신뢰할 수 없다는 신호라, 차라리 평범한 링크로 폴백한다.
  */
 export async function fetchOgData(url: string): Promise<OgData | null> {
   try {
@@ -40,9 +45,8 @@ export async function fetchOgData(url: string): Promise<OgData | null> {
 
     const html = await res.text();
     const meta = extractMetaTags(html);
-    const titleTag = html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim();
 
-    const title = meta["og:title"] || meta["twitter:title"] || titleTag;
+    const title = meta["og:title"] || meta["twitter:title"];
     if (!title) return null;
 
     const description = meta["og:description"] || meta["twitter:description"] || meta["description"];
