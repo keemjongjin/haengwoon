@@ -41,9 +41,7 @@ export default async function PostPage({
   return (
     <article>
       <header className="mb-8 text-center">
-        <div className="mb-2 text-sm text-mut">
-          {formatDate(post.pubDate)} · {post.readingMinutes}분 읽기
-        </div>
+        <div className="mb-2 text-sm text-mut">{formatDate(post.pubDate)}</div>
         <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
         {post.tags.length > 0 && (
           <div className="mt-4 flex justify-center gap-2">

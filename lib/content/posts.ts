@@ -4,7 +4,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import readingTime from "reading-time";
 import { repo } from "@/lib/db/repo";
 import { extractToc, type TocItem } from "./toc";
 
@@ -20,8 +19,6 @@ export type PostMeta = {
   heroImage?: string;
   category: string;
   tags: string[];
-  /** reading-time으로 추정한 예상 읽기 시간(분). 최소 1분으로 내림 방지. */
-  readingMinutes: number;
 };
 
 /** 상세 페이지에서 쓰는 전체 글 데이터: 메타 + 원문 마크다운 + 목차. */
@@ -33,7 +30,7 @@ function readFile(slug: string) {
 }
 
 function toMeta(slug: string): PostMeta {
-  const { data, content } = readFile(slug);
+  const { data } = readFile(slug);
   return {
     slug,
     title: data.title,
@@ -43,7 +40,6 @@ function toMeta(slug: string): PostMeta {
     heroImage: data.heroImage,
     category: data.category,
     tags: data.tags ?? [],
-    readingMinutes: Math.max(1, Math.round(readingTime(content).minutes)),
   };
 }
 

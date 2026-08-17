@@ -22,9 +22,7 @@ export function PostExcerptItem({ post }: { post: PostMeta }) {
       <h3 className="text-lg font-semibold group-hover:text-acc">{post.title}</h3>
       <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-mut">{post.description}</p>
       <div className="mt-3 flex justify-between text-xs text-mut">
-        <span>
-          {formatDate(post.pubDate)} · {post.readingMinutes}분
-        </span>
+        <span>{formatDate(post.pubDate)}</span>
         <span className="text-acc">{post.category}</span>
       </div>
     </Link>
