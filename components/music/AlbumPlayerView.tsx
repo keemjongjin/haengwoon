@@ -310,12 +310,19 @@ function Turntable({
             ① 버튼에는 -translate-y-1/2가 걸려 있어 여기에 transform을 또 쓰면 서로 덮어쓴다.
             ② 앞으로 나올 때 살짝 커지므로 잘림 방지를 위해 overflow-hidden도 안쪽으로 옮겼다.
             판 쪽(오른쪽)으로 밀며 커지는 움직임이라 "자켓을 집어 앞으로 빼든다"로 읽힌다. */}
+        {/* 살짝 기울여 둔다 — 자로 잰 듯 반듯하면 "합성한 그림"처럼 보이는데, 몇 도만 틀어도
+            테이블에 툭 올려둔 물건처럼 읽힌다. 앞으로 꺼낼 때는 각도를 거의 펴서(-1deg)
+            "집어서 똑바로 든다"는 느낌을 준다. */}
         <div
           className={
             "relative h-full w-full overflow-hidden rounded-[3px] transition-[transform,box-shadow] duration-500 ease-out " +
             (coverOnTop ? "shadow-[0_18px_50px_rgba(0,0,0,0.45)]" : "shadow-2xl")
           }
-          style={{ transform: coverOnTop ? "translateX(8%) scale(1.05)" : "translateX(0) scale(1)" }}
+          style={{
+            transform: coverOnTop
+              ? "translateX(8%) scale(1.05) rotate(-1deg)"
+              : "translateX(0) scale(1) rotate(-3.5deg)",
+          }}
         >
           {coverImageUrl ? (
             <Image src={coverImageUrl} alt={title} fill sizes="400px" className="object-cover" priority />
@@ -361,50 +368,72 @@ function Turntable({
         }}
         aria-hidden="true"
       >
-        {/* 암 본체(원통) — Sony PS-LX5BT 실기(무광 블랙 J자형 암) 참고. 크롬이 아니라 무광 블랙
-            바탕에 가로로 흐르는 하이라이트만으로 원통 입체감을 낸다. 하이라이트를 완전히
-            어둡게 하면 Music 다크 모드 배경(거의 검정)에 파묻혀 드래그할 손잡이를 못 찾는다 —
-            무광 느낌은 유지하되 중앙 하이라이트만 살짝 밝혀 다크 모드에서도 실루엣이 보이게. */}
+        {/* 암 파이프 — Sony PS-LX5BT 실기(무광 블랙 J자형 암) 참고.
+            ★ 두께가 이 그림의 전부다. 예전엔 5px 선이라 부품이 아니라 막대기처럼 보였다
+              ("졸라맨"). 실기 사진의 파이프는 헤드셸 폭의 절반쯤 되는 굵기라 그 비율로 맞췄다.
+            크롬이 아니라 무광 블랙 — 좌우 그라디언트로만 원통을 만든다. 다만 완전히 어둡게
+            하면 Music 다크 모드(거의 검정 배경)에 파묻혀 드래그할 손잡이를 못 찾으므로
+            중앙 하이라이트만 살짝 밝힌다. */}
         <div
-          className="absolute left-1/2 top-1 h-[calc(100%-0.5rem)] w-[5px] -translate-x-1/2 rounded-full"
+          className="absolute left-1/2 top-[7px] h-[calc(100%-7px)] w-[8px] -translate-x-1/2 rounded-full"
           style={{
             backgroundImage:
-              "linear-gradient(to right, #1c1d1f 0%, #45484d 38%, #6b6e73 50%, #34363a 66%, #101112 100%)",
+              "linear-gradient(to right, #141517 0%, #3c3f44 30%, #6e7278 50%, #2f3134 72%, #0d0e0f 100%)",
           }}
         />
 
-        {/* 피벗 베이스(원형 마운트) — 실기 부품도(사용설명서 "Names of Parts")처럼 작고
-            수수한 원통 베어링 하우징. 이전엔 크롬 톤이라 장식품처럼 붕 떠 보였다. */}
+        {/* 피벗 하우징 — 실기 사진의 큼직한 원통 베어링. 암이 여기 얹혀 도는 축이라
+            파이프보다 확실히 굵어야 "관절"로 읽힌다. */}
         <div
-          className="absolute -top-1 left-1/2 h-[18px] w-[18px] -translate-x-1/2 rounded-full"
+          className="absolute -top-[9px] left-1/2 h-[26px] w-[26px] -translate-x-1/2 rounded-full"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 34% 28%, #3d3f43 0%, #232427 45%, #131315 78%, #060607 100%)",
-            boxShadow: "inset 0 -1px 2px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)",
+              "radial-gradient(circle at 36% 26%, #4a4d52 0%, #303237 40%, #1a1b1d 74%, #0a0a0b 100%)",
+            boxShadow: "inset 0 -2px 3px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.45)",
           }}
         />
-        {/* 피벗 중심 나사 */}
-        <div className="absolute top-[5px] left-1/2 h-[8px] w-[8px] -translate-x-1/2 rounded-full bg-neutral-950 ring-1 ring-white/10" />
-
-        {/* ★ 카운터웨이트 없음 — PS-LX5BT는 완전자동·공장출고시 트래킹포스 고정형이라 무게추를
-            직접 조절할 필요가 없고, 실제로 피벗 뒤에 노출된 추가 없다(사용설명서 부품도 확인).
-            예전 버전엔 크롬 추가 붙어있었는데 실기에 없는 부품이라 뺐다. */}
-
-        {/* 헤드셸 — 실기 부품도의 "납작한 사각 플레이트"에 맞춰 뾰족한 사다리꼴 대신 라운드
-            사각형으로. 카트리지 바디(짙은 사각 블록)를 플레이트와 분리해 실기처럼 2단 구조로. */}
+        {/* 피벗 상단 캡(나사) */}
         <div
-          className="absolute -bottom-[19px] left-1/2 h-[8px] w-[14px] -translate-x-1/2 rotate-[16deg] rounded-[2px]"
+          className="absolute -top-[3px] left-1/2 h-[13px] w-[13px] -translate-x-1/2 rounded-full"
           style={{
-            backgroundImage: "linear-gradient(to right, #1a1b1d 0%, #38393c 40%, #46474a 52%, #202123 100%)",
+            backgroundImage: "radial-gradient(circle at 38% 30%, #55585d 0%, #2a2c2f 55%, #0f1011 100%)",
+          }}
+        />
+
+        {/* 암 리프트 레버 — 실기 사진에서 파이프 중간 오른쪽에 튀어나온 작은 부품.
+            이런 자잘한 돌기가 있어야 "기계 부품"으로 보인다(전에는 매끈한 막대뿐이었다). */}
+        <div
+          className="absolute left-1/2 top-[52%] h-[5px] w-[9px] translate-x-[1px] rounded-[1px]"
+          style={{
+            backgroundImage: "linear-gradient(to bottom, #3a3d41 0%, #202225 100%)",
             boxShadow: "0 1px 2px rgba(0,0,0,0.5)",
           }}
         />
-        {/* 카트리지 바디 — 헤드셸 플레이트 아래 매달린 사각 몸체 */}
+
+        {/* ★ 카운터웨이트 없음 — PS-LX5BT는 완전자동·공장출고시 트래킹포스 고정형이라 무게추를
+            직접 조절할 필요가 없고, 실제로 피벗 뒤에 노출된 추가 없다(사용설명서 부품도 확인). */}
+
+        {/* 헤드셸 — 실기 사진처럼 파이프 끝에 달린 "덩어리". 얇은 판때기가 아니라 파이프보다
+            두 배 넘게 넓은 각진 블록이어야 끝이 무거워 보인다. */}
         <div
-          className="absolute -bottom-[10px] left-1/2 h-[10px] w-[9px] -translate-x-1/2 rotate-[16deg] rounded-[1px] bg-neutral-950"
-          style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
+          className="absolute -bottom-[21px] left-1/2 h-[15px] w-[19px] -translate-x-1/2 rotate-[14deg] rounded-[3px]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #17181a 0%, #35373b 34%, #4d5055 52%, #24262a 78%, #101113 100%)",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
+          }}
         />
-        {/* 스타일러스 팁 — 판에 닿는 점 */}
+        {/* 카트리지 바디 — 헤드셸 아래로 물린 짙은 사각 블록 */}
+        <div
+          className="absolute -bottom-[11px] left-1/2 h-[11px] w-[13px] -translate-x-1/2 rotate-[14deg] rounded-[2px]"
+          style={{
+            backgroundImage: "linear-gradient(to bottom, #1b1c1e 0%, #0a0a0b 100%)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.55)",
+          }}
+        />
+        {/* 스타일러스 — 실기 사진의 노란 캔틸레버. 색 한 점이 들어가야 바늘 끝이 어디인지 읽힌다. */}
+        <div className="absolute -bottom-[9px] left-1/2 h-[5px] w-[3px] -translate-x-1/2 rotate-[14deg] rounded-[1px] bg-amber-400/90" />
+        {/* 바늘 끝 — 판에 실제로 닿는 점 */}
         <div className="absolute -bottom-[13px] left-1/2 h-[4px] w-[2px] -translate-x-1/2 rounded-b-full bg-neutral-800 dark:bg-neutral-900" />
       </div>
 

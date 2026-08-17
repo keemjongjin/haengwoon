@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ratingColor } from "@/lib/music/rating";
+import { RatingRing } from "./RatingRing";
 
 /** ChartAlbumRow에 넘기는 최소 데이터. rating은 호출부가 이미 평점/Elo 중 보여줄 값을 골라 넣는다. */
 export type ChartRowAlbum = {
@@ -21,7 +21,6 @@ export type ChartRowAlbum = {
 export function ChartAlbumRow({ album }: { album: ChartRowAlbum }) {
   const albumHref = `/music/album/${album.spotifyAlbumId ?? album.id}`;
   const artistHref = `/artist/${encodeURIComponent(album.artist)}`;
-  const color = album.rating != null ? ratingColor(album.rating) : undefined;
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -50,14 +49,11 @@ export function ChartAlbumRow({ album }: { album: ChartRowAlbum }) {
         </Link>
       </div>
 
-      {/* 참고 이미지의 + 버튼 자리 — 평점(색상은 rating.ts의 구간 색과 통일)으로 대체 */}
+      {/* 참고 이미지의 + 버튼 자리 — 평점으로 대체. Archive 카드와 같은 RatingRing을 그대로
+          써서 점수만큼 링이 채워진다(같은 평점이 화면마다 다르게 보이면 안 된다). */}
       {album.rating != null && (
-        <Link
-          href={albumHref}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold"
-          style={{ borderColor: color, color }}
-        >
-          {album.rating.toFixed(1)}
+        <Link href={albumHref} className="shrink-0">
+          <RatingRing value={album.rating} size={44} />
         </Link>
       )}
     </div>
