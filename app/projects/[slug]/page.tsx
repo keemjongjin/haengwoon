@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllProjectSlugs, getProject } from "@/lib/content/projects";
 import { getPostsBySlugs } from "@/lib/content/posts";
-import { mdxOptions } from "@/lib/content/mdx";
+import { mdxOptions, mdxComponents } from "@/lib/content/mdx";
 import { formatDate } from "@/lib/format";
 import { Toc } from "@/components/blog/Toc";
 import { TocFloating } from "@/components/blog/TocFloating";
@@ -66,7 +66,7 @@ export default async function ProjectPage({
       <TocFloating items={project.toc} />
 
       <div className="article">
-        <MDXRemote source={project.content} options={mdxOptions} />
+        <MDXRemote source={project.content} options={mdxOptions} components={mdxComponents} />
       </div>
 
       {/* 홈(Recent Posts)과 같은 컴포넌트(PostTitleRow)를 그대로 쓴다 — 마크업을 복사해두면

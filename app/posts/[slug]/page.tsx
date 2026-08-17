@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllPostSlugs, getPost } from "@/lib/content/posts";
-import { mdxOptions } from "@/lib/content/mdx";
+import { mdxOptions, mdxComponents } from "@/lib/content/mdx";
 import { formatDate } from "@/lib/format";
 import { Toc } from "@/components/blog/Toc";
 import { TocFloating } from "@/components/blog/TocFloating";
@@ -61,7 +61,7 @@ export default async function PostPage({
       <TocFloating items={post.toc} />
 
       <div className="article">
-        <MDXRemote source={post.content} options={mdxOptions} />
+        <MDXRemote source={post.content} options={mdxOptions} components={mdxComponents} />
       </div>
 
       <section className="mt-16 border-t border-line pt-8">

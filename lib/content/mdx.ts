@@ -7,6 +7,8 @@ import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypePrettyCode from "rehype-pretty-code";
 import type { Options as PrettyCodeOptions } from "rehype-pretty-code";
+import { rehypeImageSize } from "./rehypeImageSize";
+import { MdxImage } from "@/components/blog/MdxImage";
 
 const prettyCodeOptions: PrettyCodeOptions = {
   // 라이트/다크 듀얼 테마 — 스팬에 --shiki-light / --shiki-dark 를 심고 CSS로 전환
@@ -21,9 +23,17 @@ const remarkPlugins: PluggableList = [remarkGfm];
 const rehypePlugins: PluggableList = [
   rehypeSlug,
   [rehypePrettyCode, prettyCodeOptions],
+  // 코드 하이라이팅 다음 자리 — img 노드의 width/height를 여기서 미리 채워두면
+  // MdxImage(아래 mdxComponents)가 매 렌더마다 다시 알아낼 필요 없이 값만 받아 쓴다.
+  rehypeImageSize,
 ];
 
 /** `next-mdx-remote`(또는 동급) 컴파일러에 그대로 스프레드해 넘기는 옵션 객체. */
 export const mdxOptions = {
   mdxOptions: { remarkPlugins, rehypePlugins },
+};
+
+/** `<MDXRemote components={mdxComponents} />`로 넘겨 markdown img를 next/image로 대체한다. */
+export const mdxComponents = {
+  img: MdxImage,
 };
