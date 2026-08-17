@@ -9,6 +9,7 @@ import rehypePrettyCode from "rehype-pretty-code";
 import type { Options as PrettyCodeOptions } from "rehype-pretty-code";
 import { rehypeImageSize } from "./rehypeImageSize";
 import { MdxImage } from "@/components/blog/MdxImage";
+import { LinkPreview } from "@/components/blog/LinkPreview";
 
 const prettyCodeOptions: PrettyCodeOptions = {
   // 라이트/다크 듀얼 테마 — 스팬에 --shiki-light / --shiki-dark 를 심고 CSS로 전환
@@ -33,7 +34,12 @@ export const mdxOptions = {
   mdxOptions: { remarkPlugins, rehypePlugins },
 };
 
-/** `<MDXRemote components={mdxComponents} />`로 넘겨 markdown img를 next/image로 대체한다. */
+/**
+ * `<MDXRemote components={mdxComponents} />`로 넘긴다.
+ * - img: markdown `![]()` 이미지를 next/image로 대체.
+ * - LinkPreview: 본문에서 `<LinkPreview url="..." />`로 직접 쓰는 참고 링크 카드(OG 태그 기반).
+ */
 export const mdxComponents = {
   img: MdxImage,
+  LinkPreview,
 };
