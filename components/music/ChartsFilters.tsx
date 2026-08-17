@@ -24,7 +24,7 @@ export type ChartAlbum = {
 };
 
 type Tab = "rating" | "elo";
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 function yearOf(d: string | null): string {
   return d ? d.slice(0, 4) : "?";
