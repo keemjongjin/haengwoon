@@ -19,7 +19,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
   try {
     const post = getPost(slug);
     return { title: `${post.title} — Haengwoon`, description: post.description };
@@ -33,7 +34,13 @@ export default async function PostPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
+  // Next.js가 동적 라우트 파라미터를 디코딩하지 않고 그대로 넘길 때가 있다(예: 공백이
+  // 포함된 슬러그 → 실제 요청은 %20으로 인코딩돼 오는데 params.slug는 "%20" 문자 그대로).
+  // 파일시스템에서 읽은 슬러그(getAllPostSlugs)는 항상 디코딩된 실제 문자라 그대로 비교하면
+  // 어긋난다 — 슬러그를 최대한 하이픈으로만 짓는 게 우선이지만(현재 파일명 규칙), 그래도
+  // 방어적으로 한 번 디코딩해서 비교한다.
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
   if (!getAllPostSlugs().includes(slug)) notFound();
   const hidden = await repo.getHiddenSlugs();
   if (hidden.has(slug) && !(await isAdmin())) notFound();
