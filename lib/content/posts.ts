@@ -19,8 +19,8 @@ export type PostMeta = {
   heroImage?: string;
   category: string;
   tags: string[];
-  /** 프론트매터 relatedSlugs — 이 글과 함께 보여줄 다른 글을 직접 골라 연결(글 상세의 "관련 글"). */
-  relatedSlugs: string[];
+  /** 프론트매터 series — 같은 값이면 한 시리즈(예: 프로젝트 개발기 연재). 없으면 독립 글. */
+  series?: string;
 };
 
 /** 상세 페이지에서 쓰는 전체 글 데이터: 메타 + 원문 마크다운 + 목차. */
@@ -42,7 +42,7 @@ function toMeta(slug: string): PostMeta {
     heroImage: data.heroImage,
     category: data.category,
     tags: data.tags ?? [],
-    relatedSlugs: data.relatedSlugs ?? [],
+    series: data.series || undefined,
   };
 }
 
@@ -83,6 +83,25 @@ export function getCategories(): string[] {
 export function getPostsBySlugs(slugs: string[]): PostMeta[] {
   const all = new Map(getAllPosts().map((p) => [p.slug, p]));
   return slugs.map((s) => all.get(s)).filter((p): p is PostMeta => p !== undefined);
+}
+
+/**
+ * 글 상세의 "관련 글" 후보를 정한다.
+ * - series가 있으면: 같은 시리즈의 다른 글을 발행일 **오름차순**(오래된 순)으로 — 연재를
+ *   순서대로 읽는 느낌. 새 편을 추가할 때 이 글 저 글 돌아다니며 편집할 필요가 없다, series
+ *   값만 맞으면 자동으로 묶인다.
+ * - series가 없으면(개념 설명·논문 분석처럼 독립적인 글): 같은 category의 다른 글을
+ *   발행일 **내림차순**(최신 순) — getAllPosts()가 이미 그 순서라 별도 정렬 없이 그대로 쓴다.
+ *   /posts 목록의 카테고리 탭과 같은 정렬이라 "그 카테고리를 더 둘러본다"는 느낌과 맞는다.
+ */
+export function getRelatedPosts(post: PostMeta): PostMeta[] {
+  const others = getAllPosts().filter((p) => p.slug !== post.slug);
+  if (post.series) {
+    return others
+      .filter((p) => p.series === post.series)
+      .sort((a, b) => (a.pubDate > b.pubDate ? 1 : a.pubDate < b.pubDate ? -1 : 0));
+  }
+  return others.filter((p) => p.category === post.category);
 }
 
 /** 상세 페이지용 — 메타데이터에 원문 마크다운과 목차를 더해 반환. */
