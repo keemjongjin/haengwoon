@@ -108,12 +108,20 @@ export function AlbumRatingCard({ album }: { album: AlbumCardData }) {
 
   return (
     <div className="group relative overflow-hidden rounded-3xl p-4 text-white transition-transform hover:-translate-y-0.5">
-      {/* 배경: 커버를 흐리고 채도를 낮춘 프로스티드 글래스 (레퍼런스 톤) */}
+      {/* 배경: 커버를 흐리고 채도를 낮춘 프로스티드 글래스 (레퍼런스 톤).
+          CSS background-image로 원본 URL을 그대로 물리면 next/image 최적화를 안 거쳐서
+          Spotify 원본(장당 수백KB)이 그대로 전송된다 — 이 카드가 화면 하나에 여러 장 깔리는
+          Archive/Charts/Search/artist 페이지 전송량이 그만큼 부풀었다. <Image fill>로 바꿔서
+          같은 최적화·캐시 경로를 타게 하고, 어차피 blur로 뭉개질 배경이라 quality도 낮췄다. */}
       <div className="absolute inset-0 -z-20">
         {album.coverImageUrl ? (
-          <div
-            className="h-full w-full scale-125 bg-cover bg-center blur-2xl saturate-50 brightness-[0.42]"
-            style={{ backgroundImage: `url(${album.coverImageUrl})` }}
+          <Image
+            src={album.coverImageUrl}
+            alt=""
+            fill
+            sizes="256px"
+            quality={40}
+            className="scale-125 object-cover blur-2xl saturate-50 brightness-[0.42]"
           />
         ) : (
           <div

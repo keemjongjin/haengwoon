@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "i.scdn.co" },
       { protocol: "https", hostname: "placehold.co" },
     ],
+    // Next 16부터 quality 값을 화이트리스트에 등록해야 함(기본은 75만 허용, 그 외 값은
+    // 조용히 가장 가까운 허용값으로 대체됨). 40은 AlbumRatingCard의 블러 배경용 — 어차피
+    // blur로 뭉개지는 이미지라 낮은 화질로도 티가 안 나 전송량을 더 줄일 수 있다.
+    qualities: [40, 75],
   },
 };
 
