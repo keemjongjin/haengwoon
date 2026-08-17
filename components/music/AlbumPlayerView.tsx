@@ -361,44 +361,48 @@ function Turntable({
         }}
         aria-hidden="true"
       >
-        {/* 암 본체(원통) — 가로 그라디언트로 금속 하이라이트 */}
+        {/* 암 본체(원통) — Sony PS-LX5BT 실기(무광 블랙 J자형 암) 참고. 크롬이 아니라 무광 블랙
+            바탕에 가로로 흐르는 하이라이트만으로 원통 입체감을 낸다. 하이라이트를 완전히
+            어둡게 하면 Music 다크 모드 배경(거의 검정)에 파묻혀 드래그할 손잡이를 못 찾는다 —
+            무광 느낌은 유지하되 중앙 하이라이트만 살짝 밝혀 다크 모드에서도 실루엣이 보이게. */}
         <div
           className="absolute left-1/2 top-1 h-[calc(100%-0.5rem)] w-[5px] -translate-x-1/2 rounded-full"
           style={{
             backgroundImage:
-              "linear-gradient(to right, #6f7378 0%, #c9ced4 38%, #ffffff 50%, #aeb4bb 66%, #5e6268 100%)",
+              "linear-gradient(to right, #1c1d1f 0%, #45484d 38%, #6b6e73 50%, #34363a 66%, #101112 100%)",
           }}
         />
 
-        {/* 피벗 베이스(원형 마운트) */}
+        {/* 피벗 베이스(원형 마운트) — 실기 부품도(사용설명서 "Names of Parts")처럼 작고
+            수수한 원통 베어링 하우징. 이전엔 크롬 톤이라 장식품처럼 붕 떠 보였다. */}
         <div
-          className="absolute -top-1 left-1/2 h-[22px] w-[22px] -translate-x-1/2 rounded-full"
+          className="absolute -top-1 left-1/2 h-[18px] w-[18px] -translate-x-1/2 rounded-full"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 34% 28%, #f2f4f6 0%, #b9bfc6 42%, #767b81 74%, #4a4e53 100%)",
-            boxShadow: "inset 0 -1px 2px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.35)",
+              "radial-gradient(circle at 34% 28%, #3d3f43 0%, #232427 45%, #131315 78%, #060607 100%)",
+            boxShadow: "inset 0 -1px 2px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)",
           }}
         />
         {/* 피벗 중심 나사 */}
-        <div className="absolute top-[6px] left-1/2 h-[9px] w-[9px] -translate-x-1/2 rounded-full bg-neutral-600 ring-1 ring-white/25" />
+        <div className="absolute top-[5px] left-1/2 h-[8px] w-[8px] -translate-x-1/2 rounded-full bg-neutral-950 ring-1 ring-white/10" />
 
-        {/* 카운터웨이트 — 피벗 뒤쪽으로 살짝 나온 추(진짜 톤암의 실루엣) */}
+        {/* ★ 카운터웨이트 없음 — PS-LX5BT는 완전자동·공장출고시 트래킹포스 고정형이라 무게추를
+            직접 조절할 필요가 없고, 실제로 피벗 뒤에 노출된 추가 없다(사용설명서 부품도 확인).
+            예전 버전엔 크롬 추가 붙어있었는데 실기에 없는 부품이라 뺐다. */}
+
+        {/* 헤드셸 — 실기 부품도의 "납작한 사각 플레이트"에 맞춰 뾰족한 사다리꼴 대신 라운드
+            사각형으로. 카트리지 바디(짙은 사각 블록)를 플레이트와 분리해 실기처럼 2단 구조로. */}
         <div
-          className="absolute -top-[18px] left-1/2 h-[13px] w-[15px] -translate-x-1/2 rounded-[3px]"
+          className="absolute -bottom-[19px] left-1/2 h-[8px] w-[14px] -translate-x-1/2 rotate-[16deg] rounded-[2px]"
           style={{
-            backgroundImage: "linear-gradient(to right, #4d5156 0%, #9aa0a6 45%, #e6e9ec 55%, #6b7076 100%)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.4)",
+            backgroundImage: "linear-gradient(to right, #1a1b1d 0%, #38393c 40%, #46474a 52%, #202123 100%)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.5)",
           }}
         />
-
-        {/* 헤드셸 — 끝에서 살짝 꺾인 사다리꼴 + 바늘(스타일러스) */}
+        {/* 카트리지 바디 — 헤드셸 플레이트 아래 매달린 사각 몸체 */}
         <div
-          className="absolute -bottom-[10px] left-1/2 h-[18px] w-[13px] -translate-x-1/2 rotate-[18deg]"
-          style={{
-            backgroundImage: "linear-gradient(to right, #5a5e63 0%, #b7bdc3 40%, #f0f2f4 52%, #7d8288 100%)",
-            clipPath: "polygon(18% 0%, 82% 0%, 100% 62%, 50% 100%, 0% 62%)",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.45)",
-          }}
+          className="absolute -bottom-[10px] left-1/2 h-[10px] w-[9px] -translate-x-1/2 rotate-[16deg] rounded-[1px] bg-neutral-950"
+          style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
         />
         {/* 스타일러스 팁 — 판에 닿는 점 */}
         <div className="absolute -bottom-[13px] left-1/2 h-[4px] w-[2px] -translate-x-1/2 rounded-b-full bg-neutral-800 dark:bg-neutral-900" />
