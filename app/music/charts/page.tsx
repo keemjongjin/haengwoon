@@ -14,6 +14,7 @@ export default async function ChartsPage() {
     artist: a.artist,
     coverImageUrl: a.coverImageUrl,
     albumType: a.albumType,
+    genre: a.genre,
     reviewDate: a.reviewDate,
     manualRating: a.manualRating,
     eloScore10: eloToScore10(a.eloRating),

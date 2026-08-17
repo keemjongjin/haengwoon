@@ -4,6 +4,7 @@
 // 클라이언트에서 전부 처리 — 앨범 수가 적어(수백 장 이하) 서버 페이지네이션 없이도 충분하다.
 import { useMemo, useState } from "react";
 import { AlbumRatingCard } from "./AlbumRatingCard";
+import { FilterRow } from "./FilterRow";
 
 /** ArchiveFilters에 넘기는 앨범 데이터 — AlbumCardData에 필터링용 필드(genre/reviewDate 등)를 더함. */
 export type ArchiveAlbum = {
@@ -197,36 +198,6 @@ export function ArchiveFilters({
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-function FilterRow({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: string[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="mb-2 flex flex-wrap items-center gap-2">
-      <span className="w-8 text-xs text-mut">{label}</span>
-      {options.map((o) => (
-        <button
-          key={o}
-          onClick={() => onChange(o)}
-          className={
-            "rounded-full px-3 py-1 text-xs " +
-            (value === o ? "bg-acc text-on-acc" : "border border-line text-mut hover:text-fg")
-          }
-        >
-          {o}
-        </button>
-      ))}
     </div>
   );
 }

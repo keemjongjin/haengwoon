@@ -1,10 +1,11 @@
 "use client";
 
-// /music/charts 페이지 본체. "평점 랭킹"과 "취향 대결(Elo)" 두 탭을 전환하면서 같은 카드 컴포넌트를
-// 재사용 — Elo 탭에서는 표시용으로 eloScore10을 manualRating 자리에 끼워 넣어(아래 .map 참고)
-// AlbumRatingCard가 두 지표를 구분할 필요 없이 그대로 렌더링하게 만든다.
+// /music/charts 페이지 본체. "평점 랭킹"과 "취향 대결(Elo)" 두 탭을 전환하면서 같은 행 컴포넌트를
+// 재사용 — Elo 탭에서는 표시용으로 eloScore10을 rating 자리에 끼워 넣어(아래 .map 참고)
+// ChartAlbumRow가 두 지표를 구분할 필요 없이 그대로 렌더링하게 만든다.
 import { useMemo, useState } from "react";
-import { AlbumRatingCard } from "./AlbumRatingCard";
+import { ChartAlbumRow } from "./ChartAlbumRow";
+import { FilterRow } from "./FilterRow";
 
 /** ChartsFilters에 넘기는 앨범 데이터 — 평점(manualRating)과 Elo(eloScore10)를 둘 다 들고 있다. */
 export type ChartAlbum = {
@@ -14,6 +15,7 @@ export type ChartAlbum = {
   artist: string;
   coverImageUrl: string | null;
   albumType?: string | null;
+  genre: string | null;
   reviewDate: string | null;
   manualRating: number | null;
   eloScore10: number;
@@ -28,25 +30,33 @@ function yearOf(d: string | null): string {
   return d ? d.slice(0, 4) : "?";
 }
 
-/** 평점/Elo 탭 전환 + 연도 필터 + 순위 매긴 앨범 카드 목록(페이지네이션 포함). */
+/** 평점/Elo 탭 전환 + 연도·장르 필터 + 순위 매긴 앨범 행 목록(페이지네이션 포함). */
 export function ChartsFilters({ albums }: { albums: ChartAlbum[] }) {
   const [tab, setTab] = useState<Tab>("rating");
   const [year, setYear] = useState("전체");
+  const [genre, setGenre] = useState("전체");
   const [page, setPage] = useState(1);
 
   const years = useMemo(
     () => ["전체", ...Array.from(new Set(albums.map((a) => yearOf(a.reviewDate)))).sort().reverse()],
     [albums]
   );
+  const genres = useMemo(
+    () => ["전체", ...Array.from(new Set(albums.map((a) => a.genre).filter(Boolean) as string[]))],
+    [albums]
+  );
 
   const shown = albums
-    .filter((a) => year === "전체" || yearOf(a.reviewDate) === year)
+    .filter(
+      (a) =>
+        (year === "전체" || yearOf(a.reviewDate) === year) && (genre === "전체" || a.genre === genre)
+    )
     .sort((a, b) =>
       tab === "rating" ? (b.manualRating ?? 0) - (a.manualRating ?? 0) : b.eloScore10 - a.eloScore10
     )
     .map((a) => ({
       ...a,
-      manualRating: tab === "rating" ? a.manualRating : a.eloScore10,
+      rating: tab === "rating" ? a.manualRating : a.eloScore10,
     }));
 
   const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
@@ -60,6 +70,11 @@ export function ChartsFilters({ albums }: { albums: ChartAlbum[] }) {
 
   function changeYear(y: string) {
     setYear(y);
+    setPage(1);
+  }
+
+  function changeGenre(g: string) {
+    setGenre(g);
     setPage(1);
   }
 
@@ -85,21 +100,8 @@ export function ChartsFilters({ albums }: { albums: ChartAlbum[] }) {
         ))}
       </div>
 
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="w-8 text-xs text-mut">연도</span>
-        {years.map((y) => (
-          <button
-            key={y}
-            onClick={() => changeYear(y)}
-            className={
-              "rounded-full px-3 py-1 text-xs " +
-              (year === y ? "bg-acc text-on-acc" : "border border-line text-mut hover:text-fg")
-            }
-          >
-            {y}
-          </button>
-        ))}
-      </div>
+      <FilterRow label="연도" options={years} value={year} onChange={changeYear} />
+      <FilterRow label="장르" options={genres} value={genre} onChange={changeGenre} />
 
       <div className="mt-6 grid grid-cols-1 gap-4">
         {paged.map((a, i) => (
@@ -107,9 +109,7 @@ export function ChartsFilters({ albums }: { albums: ChartAlbum[] }) {
             <span className="w-6 shrink-0 text-center text-sm font-bold text-mut">
               {(safePage - 1) * PAGE_SIZE + i + 1}
             </span>
-            <div className="min-w-0 flex-1">
-              <AlbumRatingCard album={a} />
-            </div>
+            <ChartAlbumRow album={a} />
           </div>
         ))}
       </div>

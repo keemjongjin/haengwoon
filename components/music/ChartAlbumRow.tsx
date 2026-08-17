@@ -1,0 +1,65 @@
+import Image from "next/image";
+import Link from "next/link";
+import { ratingColor } from "@/lib/music/rating";
+
+/** ChartAlbumRow에 넘기는 최소 데이터. rating은 호출부가 이미 평점/Elo 중 보여줄 값을 골라 넣는다. */
+export type ChartRowAlbum = {
+  id: number;
+  spotifyAlbumId?: string | null;
+  title: string;
+  artist: string;
+  coverImageUrl: string | null;
+  rating: number | null;
+};
+
+/**
+ * Charts 전용 한 줄 행 — 커버 + 제목/아티스트 + 우측 평점 배지.
+ * AlbumRatingCard(프로스티드 글래스 배경 + FAVORITE SONG 섹션)는 Archive/Search/artist용으로
+ * 그대로 두고, Charts는 순위 목록이라 정보 밀도를 낮춘 이 컴포넌트를 따로 쓴다 — 참고 이미지
+ * 처럼 커버·이름만 훑고 우측 평점으로 바로 순위를 비교하는 용도.
+ */
+export function ChartAlbumRow({ album }: { album: ChartRowAlbum }) {
+  const albumHref = `/music/album/${album.spotifyAlbumId ?? album.id}`;
+  const artistHref = `/artist/${encodeURIComponent(album.artist)}`;
+  const color = album.rating != null ? ratingColor(album.rating) : undefined;
+
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-3">
+      <Link href={albumHref} className="shrink-0">
+        {album.coverImageUrl ? (
+          <Image
+            src={album.coverImageUrl}
+            alt={album.title}
+            width={56}
+            height={56}
+            className="h-14 w-14 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-card text-lg font-bold text-mut">
+            {album.title.slice(0, 1)}
+          </div>
+        )}
+      </Link>
+
+      <div className="min-w-0 flex-1">
+        <Link href={albumHref}>
+          <h3 className="truncate font-semibold hover:text-acc">{album.title}</h3>
+        </Link>
+        <Link href={artistHref} className="block truncate text-sm text-mut hover:text-fg">
+          {album.artist}
+        </Link>
+      </div>
+
+      {/* 참고 이미지의 + 버튼 자리 — 평점(색상은 rating.ts의 구간 색과 통일)으로 대체 */}
+      {album.rating != null && (
+        <Link
+          href={albumHref}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold"
+          style={{ borderColor: color, color }}
+        >
+          {album.rating.toFixed(1)}
+        </Link>
+      )}
+    </div>
+  );
+}
