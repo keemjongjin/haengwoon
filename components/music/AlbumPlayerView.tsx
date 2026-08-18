@@ -339,6 +339,53 @@ function Turntable({
         </div>
       </button>
 
+      {/* 톤암 베이스(피벗 어셈블리) — ★ 회전하는 암 본체와 **일부러 분리**한 레이어다.
+          실물에서 베어링·마운트 플레이트는 플래터 옆 플린스에 박혀 있으므로 판보다 아래에
+          있어야 하고, 판 위를 지나가는 건 파이프~바늘뿐이다. 예전엔 이것들이 암 래퍼(z-10)
+          안에 같이 있어서 재생 중 판이 오른쪽으로 나오면 베이스가 판을 덮어버렸다.
+          그래서 여기만 판(z-4/6)보다 낮은 z-[2]로 내린다.
+
+          두 부품 다 피벗을 중심으로 한 정원(正圓)이라 회전시켜도 그림이 똑같다 —
+          회전 래퍼 밖으로 빼도 시각적으로 잃는 게 없다. 위치 기준(right/top/width)은
+          암 래퍼와 정확히 같은 값을 써서 피벗이 어긋나지 않게 한다. */}
+      <div
+        className="pointer-events-none absolute z-[2] text-[13px] sm:text-[15px] lg:text-[24px] xl:text-[28px]"
+        style={{
+          right: `${ARM_RIGHT_PCT * 100}%`,
+          top: `${ARM_TOP_PCT * 100}%`,
+          width: ARM_WIDTH,
+        }}
+        aria-hidden="true"
+      >
+        {/* 암 베이스 — 플린스에 박힌 원형 마운트 플레이트(레퍼런스 225px → 3.8em).
+            회전축이 이 원의 중심이고, 파이프는 이 원의 오른쪽을 지난다. */}
+        <div
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: "3.8em",
+            height: "3.8em",
+            backgroundImage:
+              "radial-gradient(circle at 38% 30%, #4a4b50 0%, #414248 45%, #383940 78%, #2e2f34 100%)",
+            boxShadow:
+              "0 2px 5px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.07), inset 0 -0.06em 0.12em rgba(0,0,0,0.35)",
+          }}
+        />
+
+        {/* 수직 베어링 칼라 — 레퍼런스에서 가장 눈에 띄는 부품(105px → 1.87em).
+            가운데가 뚫린 두꺼운 링이라 여기서 "진짜 톤암"의 인상이 결정된다. */}
+        <div
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: "1.87em",
+            height: "1.87em",
+            border: "0.3em solid #63656d",
+            backgroundColor: "#1b1c1f",
+            boxShadow:
+              "inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 0 0.2em rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.55)",
+          }}
+        />
+      </div>
+
       {/* 톤암 — 피벗에서 아래로 늘어뜨린 구조 전체를 회전시킨다(origin: top center).
           정지 시 거의 수직으로 판 바깥(암 레스트)에, 재생 시 안쪽으로 swing해 판 위에 얹힌다.
           기하를 "한 덩어리 + 회전"으로 유지해야 각도를 바꿔도 부품 위치가 안 틀어진다.
@@ -379,34 +426,6 @@ function Turntable({
               왼쪽으로 휘어 바늘이 축 바로 아래에 떨어지는 J자다. 이 "바늘 = 축 바로 아래"는
               멋이 아니라 armGeometry()의 팁 계산 전제(팁 = 피벗 + L·(−sinθ, cosθ))라
               반드시 지켜야 한다. 그래서 휘어짐을 넣어도 팁은 래퍼 바닥 중앙에 둔다. */}
-
-        {/* 암 베이스 — 플린스에 박힌 원형 마운트 플레이트(레퍼런스 225px → 3.8em).
-            회전축이 이 원의 중심이고, 파이프는 이 원의 오른쪽을 지난다. */}
-        <div
-          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            width: "3.8em",
-            height: "3.8em",
-            backgroundImage:
-              "radial-gradient(circle at 38% 30%, #4a4b50 0%, #414248 45%, #383940 78%, #2e2f34 100%)",
-            boxShadow:
-              "0 2px 5px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.07), inset 0 -0.06em 0.12em rgba(0,0,0,0.35)",
-          }}
-        />
-
-        {/* 수직 베어링 칼라 — 레퍼런스에서 가장 눈에 띄는 부품(105px → 1.87em).
-            가운데가 뚫린 두꺼운 링이라 여기서 "진짜 톤암"의 인상이 결정된다. */}
-        <div
-          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            width: "1.87em",
-            height: "1.87em",
-            border: "0.3em solid #63656d",
-            backgroundColor: "#1b1c1f",
-            boxShadow:
-              "inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 0 0.2em rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.55)",
-          }}
-        />
 
         {/* 암 파이프(J자) — preserveAspectRatio="none" + 채움(fill) 경로.
             세로로만 늘어나므로 파이프 굵기(가로)는 어느 화면에서도 그대로다.
