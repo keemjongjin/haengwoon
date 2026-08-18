@@ -23,7 +23,9 @@ export function ChartAlbumRow({ album }: { album: ChartRowAlbum }) {
   const artistHref = `/artist/${encodeURIComponent(album.artist)}`;
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-3">
+    // pr-*: 평점 링이 본문 오른쪽 끝에 딱 붙으면 화면 밖으로 밀려난 것처럼 보인다.
+    // 순위 숫자가 왼쪽에서 들여쓰기된 만큼 오른쪽에도 여백을 줘 좌우 균형을 맞춘다.
+    <div className="flex min-w-0 flex-1 items-center gap-3 pr-4 sm:pr-8">
       <Link href={albumHref} className="shrink-0">
         {album.coverImageUrl ? (
           <Image

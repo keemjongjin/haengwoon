@@ -351,7 +351,9 @@ function Turntable({
         // "전체 재생" 버튼으로 키보드·보조기술에서 이미 가능하므로, 여기서는 중복 컨트롤로
         // 두고 aria-hidden을 유지한다(키보드로 각도를 미세 조정하게 만드는 건 과하다).
         className={
-          "absolute z-10 touch-none " +
+          // font-size = 암 길이의 약 1/10. 아래 부품들이 전부 em이라 이 한 줄로 화면
+          // 크기에 맞춰 톤암 전체가 비례 축소된다(고정 px면 작은 화면에서 판을 덮는다).
+          "absolute z-10 touch-none text-[13px] sm:text-[15px] lg:text-[24px] xl:text-[28px] " +
           (dragAngle === null ? "cursor-grab transition-transform duration-700 ease-out" : "cursor-grabbing")
         }
         style={{
@@ -368,72 +370,156 @@ function Turntable({
         }}
         aria-hidden="true"
       >
-        {/* 암 파이프 — Sony PS-LX5BT 실기(무광 블랙 J자형 암) 참고.
-            ★ 두께가 이 그림의 전부다. 예전엔 5px 선이라 부품이 아니라 막대기처럼 보였다
-              ("졸라맨"). 실기 사진의 파이프는 헤드셸 폭의 절반쯤 되는 굵기라 그 비율로 맞췄다.
-            크롬이 아니라 무광 블랙 — 좌우 그라디언트로만 원통을 만든다. 다만 완전히 어둡게
-            하면 Music 다크 모드(거의 검정 배경)에 파묻혀 드래그할 손잡이를 못 찾으므로
-            중앙 하이라이트만 살짝 밝힌다. */}
+        {/* ── 부품 치수는 Sony PS-LX5BT 실사진을 실측해 우리 판 크기로 환산한 값 ──────────
+            레퍼런스(판 800px / 암 560px)와 우리(판 409px / 암 277px)의 암:판 비율이
+            0.70 : 0.68로 거의 같아, 레퍼런스 치수 × 0.495를 그대로 쓰면 비율이 맞는다.
+            단위는 px가 아니라 em(래퍼 font-size ≈ 암 길이/10)이라 화면이 줄면 같이 줄어든다.
+
+            ★ 배치의 핵심: 실기는 파이프가 베어링 원의 **오른쪽**을 지나 아래로 내려오면서
+              왼쪽으로 휘어 바늘이 축 바로 아래에 떨어지는 J자다. 이 "바늘 = 축 바로 아래"는
+              멋이 아니라 armGeometry()의 팁 계산 전제(팁 = 피벗 + L·(−sinθ, cosθ))라
+              반드시 지켜야 한다. 그래서 휘어짐을 넣어도 팁은 래퍼 바닥 중앙에 둔다. */}
+
+        {/* 암 베이스 — 플린스에 박힌 원형 마운트 플레이트(레퍼런스 225px → 3.8em).
+            회전축이 이 원의 중심이고, 파이프는 이 원의 오른쪽을 지난다. */}
         <div
-          className="absolute left-1/2 top-[7px] h-[calc(100%-7px)] w-[8px] -translate-x-1/2 rounded-full"
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
+            width: "3.8em",
+            height: "3.8em",
             backgroundImage:
-              "linear-gradient(to right, #141517 0%, #3c3f44 30%, #6e7278 50%, #2f3134 72%, #0d0e0f 100%)",
+              "radial-gradient(circle at 38% 30%, #4a4b50 0%, #414248 45%, #383940 78%, #2e2f34 100%)",
+            boxShadow:
+              "0 2px 5px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.07), inset 0 -0.06em 0.12em rgba(0,0,0,0.35)",
           }}
         />
 
-        {/* 피벗 하우징 — 실기 사진의 큼직한 원통 베어링. 암이 여기 얹혀 도는 축이라
-            파이프보다 확실히 굵어야 "관절"로 읽힌다. */}
+        {/* 수직 베어링 칼라 — 레퍼런스에서 가장 눈에 띄는 부품(105px → 1.87em).
+            가운데가 뚫린 두꺼운 링이라 여기서 "진짜 톤암"의 인상이 결정된다. */}
         <div
-          className="absolute -top-[9px] left-1/2 h-[26px] w-[26px] -translate-x-1/2 rounded-full"
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
-            backgroundImage:
-              "radial-gradient(circle at 36% 26%, #4a4d52 0%, #303237 40%, #1a1b1d 74%, #0a0a0b 100%)",
-            boxShadow: "inset 0 -2px 3px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.45)",
-          }}
-        />
-        {/* 피벗 상단 캡(나사) */}
-        <div
-          className="absolute -top-[3px] left-1/2 h-[13px] w-[13px] -translate-x-1/2 rounded-full"
-          style={{
-            backgroundImage: "radial-gradient(circle at 38% 30%, #55585d 0%, #2a2c2f 55%, #0f1011 100%)",
+            width: "1.87em",
+            height: "1.87em",
+            border: "0.3em solid #63656d",
+            backgroundColor: "#1b1c1f",
+            boxShadow:
+              "inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 0 0.2em rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.55)",
           }}
         />
 
-        {/* 암 리프트 레버 — 실기 사진에서 파이프 중간 오른쪽에 튀어나온 작은 부품.
-            이런 자잘한 돌기가 있어야 "기계 부품"으로 보인다(전에는 매끈한 막대뿐이었다). */}
+        {/* 암 파이프(J자) — preserveAspectRatio="none" + 채움(fill) 경로.
+            세로로만 늘어나므로 파이프 굵기(가로)는 어느 화면에서도 그대로다.
+            stroke로 그리면 굵기까지 같이 늘어나 화면마다 다른 두께가 된다. */}
+        <svg
+          className="absolute left-1/2 top-0 h-full -translate-x-1/2"
+          style={{ width: "2.6em" }}
+          viewBox="0 0 26 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="hw-arm-tube" gradientUnits="userSpaceOnUse" x1="11.4" y1="0" x2="17.6" y2="0">
+              <stop offset="0%" stopColor="#141517" />
+              <stop offset="30%" stopColor="#3f4247" />
+              <stop offset="52%" stopColor="#6e7278" />
+              <stop offset="74%" stopColor="#2f3134" />
+              <stop offset="100%" stopColor="#0d0e0f" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M 13.9,0 C 13.9,44 13.6,62 11.4,100 L 14.6,100 C 16.8,62 17.1,44 17.1,0 Z"
+            fill="url(#hw-arm-tube)"
+          />
+        </svg>
+
+        {/* 피벗 옆 수평 스터브 — 파이프 오른쪽으로 짧게 튀어나온 베어링 축(32px → 0.62em).
+            PS-LX5BT는 무게추가 없어 이 스터브가 뒤쪽 실루엣의 전부다. */}
         <div
-          className="absolute left-1/2 top-[52%] h-[5px] w-[9px] translate-x-[1px] rounded-[1px]"
+          className="absolute rounded-[0.08em]"
           style={{
-            backgroundImage: "linear-gradient(to bottom, #3a3d41 0%, #202225 100%)",
+            left: "calc(50% + 0.28em)",
+            top: "-0.2em",
+            width: "0.62em",
+            height: "0.42em",
+            backgroundImage: "linear-gradient(to bottom, #55565c 0%, #3a3b3f 55%, #202124 100%)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.45)",
+          }}
+        />
+
+        {/* 암 리프트 레버 — 파이프 중간 오른쪽 돌기(30px → 0.54em).
+            이런 자잘한 부품이 있어야 매끈한 막대가 아니라 기계로 읽힌다. */}
+        <div
+          className="absolute rounded-[0.06em]"
+          style={{
+            left: "calc(50% + 0.14em)",
+            top: "52%",
+            width: "0.54em",
+            height: "0.2em",
+            backgroundImage: "linear-gradient(to bottom, #55565c 0%, #2c2d31 100%)",
             boxShadow: "0 1px 2px rgba(0,0,0,0.5)",
           }}
         />
 
-        {/* ★ 카운터웨이트 없음 — PS-LX5BT는 완전자동·공장출고시 트래킹포스 고정형이라 무게추를
-            직접 조절할 필요가 없고, 실제로 피벗 뒤에 노출된 추가 없다(사용설명서 부품도 확인). */}
+        {/* ★ 카운터웨이트 없음 — PS-LX5BT는 완전자동·트래킹포스 고정형이라 노출된 무게추가
+            실제로 없다(사용설명서 부품도에서 확인). */}
 
-        {/* 헤드셸 — 실기 사진처럼 파이프 끝에 달린 "덩어리". 얇은 판때기가 아니라 파이프보다
-            두 배 넘게 넓은 각진 블록이어야 끝이 무거워 보인다. */}
+        {/* 헤드셸 — 레퍼런스의 두툼한 사각 블록(75×80px → 1.34×1.44em).
+            파이프의 4배 넘는 폭이라 끝이 확실히 무거워 보인다. 바닥이 바늘 접점에 오도록
+            bottom을 STYLUS_OVERHANG만큼 내린다. */}
         <div
-          className="absolute -bottom-[21px] left-1/2 h-[15px] w-[19px] -translate-x-1/2 rotate-[14deg] rounded-[3px]"
+          className="absolute left-1/2 rounded-[0.1em]"
           style={{
+            bottom: `-${STYLUS_OVERHANG}px`,
+            width: "1.34em",
+            height: "1.44em",
+            transform: "translateX(-56%) rotate(16deg)",
             backgroundImage:
-              "linear-gradient(to right, #17181a 0%, #35373b 34%, #4d5055 52%, #24262a 78%, #101113 100%)",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
+              "linear-gradient(150deg, #55565c 0%, #45464c 38%, #34353a 70%, #232427 100%)",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.5), inset 0 0.04em 0 rgba(255,255,255,0.14)",
           }}
-        />
-        {/* 카트리지 바디 — 헤드셸 아래로 물린 짙은 사각 블록 */}
+        >
+          {/* 헤드셸 고정 나사 2개 — 레퍼런스에서 블록 면에 보이는 작은 원 */}
+          <span
+            className="absolute rounded-full"
+            style={{ left: "20%", top: "32%", width: "0.2em", height: "0.2em", backgroundColor: "#191a1c" }}
+          />
+          <span
+            className="absolute rounded-full"
+            style={{ left: "56%", top: "46%", width: "0.2em", height: "0.2em", backgroundColor: "#191a1c" }}
+          />
+        </div>
+
+        {/* 핑거 리프트 — 헤드셸에서 오른쪽으로 뻗은 밝은 은색 막대(40px → 0.72em).
+            어두운 암에서 유일하게 밝은 금속이라 실루엣의 포인트가 된다. */}
         <div
-          className="absolute -bottom-[11px] left-1/2 h-[11px] w-[13px] -translate-x-1/2 rotate-[14deg] rounded-[2px]"
+          className="absolute rounded-full"
           style={{
-            backgroundImage: "linear-gradient(to bottom, #1b1c1e 0%, #0a0a0b 100%)",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.55)",
+            bottom: `${-STYLUS_OVERHANG + 4}px`,
+            left: "calc(50% + 0.44em)",
+            width: "0.72em",
+            height: "0.14em",
+            transform: "rotate(16deg)",
+            backgroundImage: "linear-gradient(to bottom, #b6b7bd 0%, #85868c 60%, #5c5d62 100%)",
           }}
         />
-        {/* 스타일러스 — 실기 사진의 노란 캔틸레버. 색 한 점이 들어가야 바늘 끝이 어디인지 읽힌다. */}
-        <div className="absolute -bottom-[9px] left-1/2 h-[5px] w-[3px] -translate-x-1/2 rotate-[14deg] rounded-[1px] bg-amber-400/90" />
-        {/* 바늘 끝 — 판에 실제로 닿는 점 */}
+
+        {/* 스타일러스 가드 — 레퍼런스의 노란 플라스틱 조각. 채도를 낮춘 머스터드라
+            사이트 accent(초록)와 부딪히지 않는다. */}
+        <div
+          className="absolute rounded-[0.05em]"
+          style={{
+            bottom: `-${STYLUS_OVERHANG + 1}px`,
+            left: "calc(50% - 0.6em)",
+            width: "0.46em",
+            height: "0.22em",
+            transform: "rotate(16deg)",
+            backgroundImage: "linear-gradient(to bottom, #d8c256 0%, #b99e34 100%)",
+          }}
+        />
+
+        {/* 바늘 끝 — 판에 실제로 닿는 점. 위치는 STYLUS_OVERHANG과 정확히 같아야 한다
+            (armGeometry()의 len 계산이 이 값을 쓴다). */}
         <div className="absolute -bottom-[13px] left-1/2 h-[4px] w-[2px] -translate-x-1/2 rounded-b-full bg-neutral-800 dark:bg-neutral-900" />
       </div>
 
