@@ -381,68 +381,97 @@ function Turntable({
         }}
         aria-hidden="true"
       >
-        {/* 마운트 플레이트 — 플린스에 박힌 원판(ref 225px → 3.8em).
-            바깥 테두리에 얇은 하이라이트를 둘러 가공된 금속판처럼 각을 세운다. */}
+        {/* 마운트 플레이트 — ref 반지름 115px = 암 길이의 20.5% → 4.14em.
+            ★ 일부러 대비를 죽인 판이다. 실기에서 이 판은 플린스와 거의 같은 톤이라 눈에 띄지
+            않고, 시선을 끄는 건 그 위의 밝은 베어링 링이다. 예전엔 여길 진한 그라디언트로
+            칠해서 검은 덩어리가 주인공이 돼버렸다. */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
-            width: "3.8em",
-            height: "3.8em",
+            width: "4.14em",
+            height: "4.14em",
             backgroundImage:
-              "radial-gradient(circle at 36% 28%, #4d4e54 0%, #424349 42%, #37383e 74%, #2b2c31 100%)",
+              "radial-gradient(circle at 40% 32%, #3e4045 0%, #3a3c41 55%, #34363b 82%, #2d2f33 100%)",
             boxShadow:
-              "0 0.08em 0.18em rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.09), inset 0 -0.06em 0.12em rgba(0,0,0,0.35)",
+              "0 0.1em 0.22em rgba(0,0,0,0.42), inset 0 0 0 1px rgba(255,255,255,0.06)",
           }}
         />
 
-        {/* 플레이트에 새겨진 동심 홈 — 단색 원판이면 플라스틱 스티커처럼 보인다.
-            선 하나로 "깎아낸 금속"의 인상이 생긴다. */}
+        {/* 판에 새겨진 동심 홈 — 단색 원판을 "깎아낸 금속"으로 만드는 선 하나. */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
-            width: "2.95em",
-            height: "2.95em",
-            boxShadow:
-              "inset 0 0 0 1px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.05)",
+            width: "3.3em",
+            height: "3.3em",
+            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.045)",
           }}
         />
 
-        {/* 베어링 하우징(바깥) — 위에서 빛을 받는 금속 원통. 단순 border로는 한쪽만 밝은
-            원통감이 안 나와서, 사선 그라디언트 원판 위에 어두운 보어를 얹는 방식으로 만든다. */}
+        {/* 톤암 레스트/락 — 베어링 아래쪽 판 위에 얹힌 작은 부품(ref 기준 축에서 +0.23em, +1.53em).
+            실기 사진에서 이 자리에 U자 클립이 보인다. 기능적 표현은 아니고, 이게 있어야 축 주변이
+            "부품이 모인 자리"로 읽힌다. */}
         <div
-          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          className="absolute rounded-[0.07em]"
           style={{
-            width: "1.87em",
-            height: "1.87em",
-            backgroundImage:
-              "linear-gradient(148deg, #9195a0 0%, #6e7178 26%, #4b4d53 55%, #303237 80%, #24262a 100%)",
-            boxShadow:
-              "0 0.06em 0.14em rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.14)",
-          }}
-        />
-
-        {/* 베어링 보어 — 안쪽으로 파인 어두운 구멍. 위쪽 안쪽에 반사광을 남겨 깊이를 준다. */}
-        <div
-          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            width: "1.16em",
-            height: "1.16em",
-            backgroundImage:
-              "radial-gradient(circle at 50% 76%, #2a2c31 0%, #1b1c20 55%, #101113 100%)",
-            boxShadow:
-              "inset 0 0.06em 0.1em rgba(0,0,0,0.8), inset 0 -0.04em 0.06em rgba(255,255,255,0.10)",
-          }}
-        />
-
-        {/* 축 캡(중심 나사) — 회전축의 정중앙. 이게 있어야 "여기가 회전 중심"으로 읽힌다. */}
-        <div
-          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            width: "0.5em",
+            left: "calc(50% + 0.23em)",
+            top: "1.35em",
+            width: "0.46em",
             height: "0.5em",
+            transform: "translateX(-50%)",
+            backgroundImage: "linear-gradient(to bottom, #4a4c52 0%, #2b2d31 60%, #1c1d20 100%)",
+            boxShadow: "0 0.03em 0.07em rgba(0,0,0,0.5)",
+          }}
+        />
+        {/* 클립의 홈(U자 안쪽) */}
+        <div
+          className="absolute rounded-b-[0.06em]"
+          style={{
+            left: "calc(50% + 0.23em)",
+            top: "1.35em",
+            width: "0.17em",
+            height: "0.3em",
+            transform: "translateX(-50%)",
+            backgroundColor: "#131416",
+          }}
+        />
+
+        {/* ★ 베어링 링 — 이 부품이 축의 주인공이다. ref 바깥 지름 1.91em, 보어 1.19em이라
+            보어가 62%를 차지한다: 꽉 찬 원반이 아니라 **밴드(도넛)**라는 뜻.
+            밴드만 밝은 금속으로 띄우고 가운데는 비워서, 링 자체가 도드라지게 한다. */}
+        <div
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: "1.91em",
+            height: "1.91em",
             backgroundImage:
-              "radial-gradient(circle at 38% 30%, #a8abb3 0%, #74777e 45%, #45474c 100%)",
-            boxShadow: "0 0.02em 0.05em rgba(0,0,0,0.6)",
+              "linear-gradient(146deg, #c4c8d1 0%, #969aa4 20%, #6b6e77 44%, #494b52 68%, #33353a 86%, #26282c 100%)",
+            boxShadow:
+              "0 0.07em 0.16em rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.28)",
+          }}
+        />
+
+        {/* 보어 — 링 가운데 뚫린 어두운 구멍. 위쪽 안쪽에만 반사광을 남겨 "파여 있다"로 읽히게.
+            예전엔 여기에 밝은 축 캡을 박아 링보다 가운데가 더 튀었는데, 실기 사진의 보어는
+            비어 있고 어둡다. */}
+        <div
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: "1.19em",
+            height: "1.19em",
+            backgroundImage:
+              "radial-gradient(circle at 50% 72%, #303237 0%, #1e2023 52%, #121315 100%)",
+            boxShadow:
+              "inset 0 0.07em 0.12em rgba(0,0,0,0.85), inset 0 -0.05em 0.07em rgba(255,255,255,0.12)",
+          }}
+        />
+
+        {/* 보어 바닥의 축 끝 — 아주 작게만. 링보다 튀면 안 된다. */}
+        <div
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: "0.34em",
+            height: "0.34em",
+            backgroundImage: "radial-gradient(circle at 40% 34%, #5c5f66 0%, #3a3c41 60%, #232529 100%)",
           }}
         />
       </div>
@@ -525,6 +554,21 @@ function Turntable({
             height: "0.19em",
             backgroundImage: "linear-gradient(to bottom, #55565c 0%, #2c2d31 100%)",
             boxShadow: "0 1px 2px rgba(0,0,0,0.5)",
+          }}
+        />
+
+        {/* 꺾임 이음매 — 직선부와 꺾인 구간이 각도로 만나면 바깥쪽에 삼각 노치가 생겨
+            파이프가 끊겨 보인다. 회전 원점에 파이프 굵기와 같은 원을 얹어 그 틈을 메운다
+            (원이라 어떤 각도로 꺾여도 이음매가 매끄럽다). */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            left: `calc(50% + ${TUBE_DX}em)`,
+            top: `${BEND_TOP}%`,
+            width: `${TUBE_W}em`,
+            height: `${TUBE_W}em`,
+            transform: "translate(-50%, -50%)",
+            backgroundImage: TUBE_GRADIENT,
           }}
         />
 
