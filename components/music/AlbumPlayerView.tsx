@@ -52,7 +52,31 @@ type PlayerAlbum = {
 const ARM_RIGHT_PCT = 0.05; // 컨테이너 오른쪽에서 피벗까지
 const ARM_TOP_PCT = 0.1; // 컨테이너 위에서 피벗까지
 const ARM_WIDTH = 10; // 톤암 래퍼 폭(px) — 피벗 x를 중심으로 잡을 때 절반을 뺀다
-const STYLUS_OVERHANG = 13; // 래퍼 아래로 더 나온 바늘 끝(px)
+// 래퍼 아래로 더 나온 바늘 끝 — 암 높이에 대한 비율. 고정 px였을 땐 xl에서 13/264=4.9%,
+// 모바일에서 13/120=10.8%로 화면마다 실효 암 길이가 달라져 "바늘이 판 위인가" 판정이 어긋났다.
+const STYLUS_OVERHANG_RATIO = 0.048;
+
+// ── 톤암 끝단(J자 꺾임) ──────────────────────────────────────────────────────
+// 레퍼런스 사진 실측 → ×0.495 환산. 부품은 전부 em이고 래퍼 font-size ≈ 암 높이/9.6이라
+// 화면 크기가 바뀌어도 비율이 유지된다.
+const TUBE_DX = 1.26; // 파이프가 피벗 축에서 오른쪽으로 벗어난 거리(ref 70px)
+const TUBE_REAR = 1.5; // 피벗보다 위로 올라간 뒤쪽 파이프(ref 115px, 컨테이너 밖으로 안 나가게 줄임)
+const TUBE_W = 0.32; // 파이프 굵기(ref 18px)
+const BEND_DEG = 24; // ★ 끝에서 꺾이는 각도 — 이게 없으면 그냥 막대기다
+const BEND_TOP = 75.3; // 꺾임 시작 지점(암 높이의 %)
+// 꺾인 축 위에서의 배분: 파이프 → 헤드셸 → 노란 가드. 합이 피벗~바늘 거리와 맞아떨어져야
+// 바늘 끝이 래퍼 바닥 중앙(=armGeometry의 팁 계산 전제)에 정확히 떨어진다.
+// 헤드셸 실측: 사진 속 바운딩박스 75×95px는 블록이 25° 기울어진 결과다. w×2w 직사각형을
+// 25° 돌리면 bbox = (w·cos+2w·sin) × (w·sin+2w·cos) = 1.75w × 2.24w → w≈42.8, h≈85.6px.
+// 환산하면 0.77em × 1.54em. (예전엔 1:1 정사각형이라 실기와 전혀 달랐다.)
+const BENT_LEN = 1.26;
+const HS_LEN = 1.54; // 헤드셸 길이
+const HS_W = 0.77; // 헤드셸 폭 — 길이의 정확히 절반(1:2)
+const GUARD_LEN = 0.3; // 노란 스타일러스 가드(헤드셸 **아래**에 붙는다)
+/** 파이프 원통감 — 길이 방향과 수직으로 흐르는 하이라이트. 꺾인 구간도 같은 값을 쓴다
+ *  (회전 그룹 안에서는 'to right'가 자동으로 그 구간의 수직 방향이 된다). */
+const TUBE_GRADIENT =
+  "linear-gradient(to right, #141517 0%, #3f4247 28%, #7a7e85 50%, #2f3134 74%, #0d0e0f 100%)";
 // 팁 = 피벗 + L·(−sinθ, cosθ) → 양수 θ가 팁을 왼쪽(판 안쪽)으로 보낸다.
 const ARM_PLAY_DEG = 4; // 팁이 중심에서 약 0.86r — 첫 곡이 시작되는 바깥쪽 홈
 const ARM_REST_DEG = -6; // 판 오른쪽 바깥 암 레스트에 park
@@ -139,7 +163,7 @@ function Turntable({
       px: r.right - r.width * ARM_RIGHT_PCT - ARM_WIDTH / 2,
       py: r.top + r.height * ARM_TOP_PCT,
       // offsetHeight는 회전과 무관한 레이아웃 높이 — rect를 쓰면 회전 때문에 값이 커진다
-      len: arm.offsetHeight + STYLUS_OVERHANG,
+      len: arm.offsetHeight * (1 + STYLUS_OVERHANG_RATIO),
     };
   }
 
@@ -349,7 +373,7 @@ function Turntable({
           회전 래퍼 밖으로 빼도 시각적으로 잃는 게 없다. 위치 기준(right/top/width)은
           암 래퍼와 정확히 같은 값을 써서 피벗이 어긋나지 않게 한다. */}
       <div
-        className="pointer-events-none absolute z-[2] text-[13px] sm:text-[15px] lg:text-[24px] xl:text-[28px]"
+        className="pointer-events-none absolute z-[2] text-[12.5px] sm:text-[14px] lg:text-[24px] xl:text-[27.5px]"
         style={{
           right: `${ARM_RIGHT_PCT * 100}%`,
           top: `${ARM_TOP_PCT * 100}%`,
@@ -357,31 +381,68 @@ function Turntable({
         }}
         aria-hidden="true"
       >
-        {/* 암 베이스 — 플린스에 박힌 원형 마운트 플레이트(레퍼런스 225px → 3.8em).
-            회전축이 이 원의 중심이고, 파이프는 이 원의 오른쪽을 지난다. */}
+        {/* 마운트 플레이트 — 플린스에 박힌 원판(ref 225px → 3.8em).
+            바깥 테두리에 얇은 하이라이트를 둘러 가공된 금속판처럼 각을 세운다. */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
             width: "3.8em",
             height: "3.8em",
             backgroundImage:
-              "radial-gradient(circle at 38% 30%, #4a4b50 0%, #414248 45%, #383940 78%, #2e2f34 100%)",
+              "radial-gradient(circle at 36% 28%, #4d4e54 0%, #424349 42%, #37383e 74%, #2b2c31 100%)",
             boxShadow:
-              "0 2px 5px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.07), inset 0 -0.06em 0.12em rgba(0,0,0,0.35)",
+              "0 0.08em 0.18em rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.09), inset 0 -0.06em 0.12em rgba(0,0,0,0.35)",
           }}
         />
 
-        {/* 수직 베어링 칼라 — 레퍼런스에서 가장 눈에 띄는 부품(105px → 1.87em).
-            가운데가 뚫린 두꺼운 링이라 여기서 "진짜 톤암"의 인상이 결정된다. */}
+        {/* 플레이트에 새겨진 동심 홈 — 단색 원판이면 플라스틱 스티커처럼 보인다.
+            선 하나로 "깎아낸 금속"의 인상이 생긴다. */}
+        <div
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: "2.95em",
+            height: "2.95em",
+            boxShadow:
+              "inset 0 0 0 1px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.05)",
+          }}
+        />
+
+        {/* 베어링 하우징(바깥) — 위에서 빛을 받는 금속 원통. 단순 border로는 한쪽만 밝은
+            원통감이 안 나와서, 사선 그라디언트 원판 위에 어두운 보어를 얹는 방식으로 만든다. */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
             width: "1.87em",
             height: "1.87em",
-            border: "0.3em solid #63656d",
-            backgroundColor: "#1b1c1f",
+            backgroundImage:
+              "linear-gradient(148deg, #9195a0 0%, #6e7178 26%, #4b4d53 55%, #303237 80%, #24262a 100%)",
             boxShadow:
-              "inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 0 0.2em rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.55)",
+              "0 0.06em 0.14em rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.14)",
+          }}
+        />
+
+        {/* 베어링 보어 — 안쪽으로 파인 어두운 구멍. 위쪽 안쪽에 반사광을 남겨 깊이를 준다. */}
+        <div
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: "1.16em",
+            height: "1.16em",
+            backgroundImage:
+              "radial-gradient(circle at 50% 76%, #2a2c31 0%, #1b1c20 55%, #101113 100%)",
+            boxShadow:
+              "inset 0 0.06em 0.1em rgba(0,0,0,0.8), inset 0 -0.04em 0.06em rgba(255,255,255,0.10)",
+          }}
+        />
+
+        {/* 축 캡(중심 나사) — 회전축의 정중앙. 이게 있어야 "여기가 회전 중심"으로 읽힌다. */}
+        <div
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: "0.5em",
+            height: "0.5em",
+            backgroundImage:
+              "radial-gradient(circle at 38% 30%, #a8abb3 0%, #74777e 45%, #45474c 100%)",
+            boxShadow: "0 0.02em 0.05em rgba(0,0,0,0.6)",
           }}
         />
       </div>
@@ -400,7 +461,7 @@ function Turntable({
         className={
           // font-size = 암 길이의 약 1/10. 아래 부품들이 전부 em이라 이 한 줄로 화면
           // 크기에 맞춰 톤암 전체가 비례 축소된다(고정 px면 작은 화면에서 판을 덮는다).
-          "absolute z-10 touch-none text-[13px] sm:text-[15px] lg:text-[24px] xl:text-[28px] " +
+          "absolute z-10 touch-none text-[12.5px] sm:text-[14px] lg:text-[24px] xl:text-[27.5px] " +
           (dragAngle === null ? "cursor-grab transition-transform duration-700 ease-out" : "cursor-grabbing")
         }
         style={{
@@ -427,119 +488,141 @@ function Turntable({
               멋이 아니라 armGeometry()의 팁 계산 전제(팁 = 피벗 + L·(−sinθ, cosθ))라
               반드시 지켜야 한다. 그래서 휘어짐을 넣어도 팁은 래퍼 바닥 중앙에 둔다. */}
 
-        {/* 암 파이프(J자) — preserveAspectRatio="none" + 채움(fill) 경로.
-            세로로만 늘어나므로 파이프 굵기(가로)는 어느 화면에서도 그대로다.
-            stroke로 그리면 굵기까지 같이 늘어나 화면마다 다른 두께가 된다. */}
-        <svg
-          className="absolute left-1/2 top-0 h-full -translate-x-1/2"
-          style={{ width: "2.6em" }}
-          viewBox="0 0 26 100"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="hw-arm-tube" gradientUnits="userSpaceOnUse" x1="11.4" y1="0" x2="17.6" y2="0">
-              <stop offset="0%" stopColor="#141517" />
-              <stop offset="30%" stopColor="#3f4247" />
-              <stop offset="52%" stopColor="#6e7278" />
-              <stop offset="74%" stopColor="#2f3134" />
-              <stop offset="100%" stopColor="#0d0e0f" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M 13.9,0 C 13.9,44 13.6,62 11.4,100 L 14.6,100 C 16.8,62 17.1,44 17.1,0 Z"
-            fill="url(#hw-arm-tube)"
-          />
-        </svg>
+        {/* 암 파이프(직선부) — 피벗 축에서 오른쪽으로 TUBE_DX만큼 벗어나 지나가고,
+            피벗보다 위로도 조금 올라간다(뒤쪽 파이프). 실기도 베어링이 파이프 중간에 물려 있다. */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            left: `calc(50% + ${TUBE_DX}em)`,
+            top: `-${TUBE_REAR}em`,
+            width: `${TUBE_W}em`,
+            height: `calc(${BEND_TOP}% + ${TUBE_REAR}em)`,
+            transform: "translateX(-50%)",
+            backgroundImage: TUBE_GRADIENT,
+          }}
+        />
 
-        {/* 피벗 옆 수평 스터브 — 파이프 오른쪽으로 짧게 튀어나온 베어링 축(32px → 0.62em).
-            PS-LX5BT는 무게추가 없어 이 스터브가 뒤쪽 실루엣의 전부다. */}
+        {/* 피벗 옆 수평 스터브 — 파이프 오른쪽으로 짧게 튀어나온 축(ref 32px). */}
         <div
           className="absolute rounded-[0.08em]"
           style={{
-            left: "calc(50% + 0.28em)",
-            top: "-0.2em",
+            left: `calc(50% + ${TUBE_DX + 0.16}em)`,
+            top: "-0.21em",
             width: "0.62em",
             height: "0.42em",
-            backgroundImage: "linear-gradient(to bottom, #55565c 0%, #3a3b3f 55%, #202124 100%)",
+            backgroundImage: "linear-gradient(to bottom, #5b5d64 0%, #3a3b3f 55%, #202124 100%)",
             boxShadow: "0 1px 2px rgba(0,0,0,0.45)",
           }}
         />
 
-        {/* 암 리프트 레버 — 파이프 중간 오른쪽 돌기(30px → 0.54em).
-            이런 자잘한 부품이 있어야 매끈한 막대가 아니라 기계로 읽힌다. */}
+        {/* 암 리프트 레버 — 파이프 중간 오른쪽 돌기. */}
         <div
           className="absolute rounded-[0.06em]"
           style={{
-            left: "calc(50% + 0.14em)",
-            top: "52%",
-            width: "0.54em",
-            height: "0.2em",
+            left: `calc(50% + ${TUBE_DX + 0.1}em)`,
+            top: "48%",
+            width: "0.5em",
+            height: "0.19em",
             backgroundImage: "linear-gradient(to bottom, #55565c 0%, #2c2d31 100%)",
             boxShadow: "0 1px 2px rgba(0,0,0,0.5)",
           }}
         />
 
-        {/* ★ 카운터웨이트 없음 — PS-LX5BT는 완전자동·트래킹포스 고정형이라 노출된 무게추가
-            실제로 없다(사용설명서 부품도에서 확인). */}
-
-        {/* 헤드셸 — 레퍼런스의 두툼한 사각 블록(75×80px → 1.34×1.44em).
-            파이프의 4배 넘는 폭이라 끝이 확실히 무거워 보인다. 바닥이 바늘 접점에 오도록
-            bottom을 STYLUS_OVERHANG만큼 내린다. */}
+        {/* ★ 꺾인 끝단 — 파이프 끝 BEND_DEG(24°) 꺾임부터 헤드셸·가드까지 한 그룹으로 회전.
+            한 덩어리로 돌려야 각 부품이 같은 축 위에 정확히 이어진다(따로 돌리면 이음매가 어긋난다).
+            그룹 길이(BENT_LEN+HS_LEN+GUARD_LEN)와 꺾임 위치는 바늘 끝이 래퍼 바닥 중앙에
+            떨어지도록 역산한 값이다 — armGeometry()의 팁 공식이 그걸 전제로 한다. */}
         <div
-          className="absolute left-1/2 rounded-[0.1em]"
+          className="absolute"
           style={{
-            bottom: `-${STYLUS_OVERHANG}px`,
-            width: "1.34em",
-            height: "1.44em",
-            transform: "translateX(-56%) rotate(16deg)",
-            backgroundImage:
-              "linear-gradient(150deg, #55565c 0%, #45464c 38%, #34353a 70%, #232427 100%)",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.5), inset 0 0.04em 0 rgba(255,255,255,0.14)",
+            left: `calc(50% + ${TUBE_DX}em)`,
+            top: `${BEND_TOP}%`,
+            width: 0,
+            height: 0,
+            transform: `rotate(${BEND_DEG}deg)`,
+            transformOrigin: "top center",
           }}
         >
-          {/* 헤드셸 고정 나사 2개 — 레퍼런스에서 블록 면에 보이는 작은 원 */}
-          <span
+          {/* 꺾인 파이프 */}
+          <div
             className="absolute rounded-full"
-            style={{ left: "20%", top: "32%", width: "0.2em", height: "0.2em", backgroundColor: "#191a1c" }}
+            style={{
+              left: 0,
+              top: "-0.1em",
+              width: `${TUBE_W}em`,
+              height: `${BENT_LEN + 0.1}em`,
+              transform: "translateX(-50%)",
+              backgroundImage: TUBE_GRADIENT,
+            }}
           />
-          <span
+
+          {/* 헤드셸 — 1:2 세로로 긴 블록. 파이프 끝에 물린 카트리지 하우징. */}
+          <div
+            className="absolute"
+            style={{
+              left: 0,
+              top: `${BENT_LEN}em`,
+              width: `${HS_W}em`,
+              height: `${HS_LEN}em`,
+              transform: "translateX(-50%)",
+              borderRadius: "0.09em",
+              backgroundImage:
+                "linear-gradient(to right, #16171a 0%, #3a3c41 26%, #55575e 50%, #2b2d31 76%, #131416 100%)",
+              boxShadow: "0 0.06em 0.12em rgba(0,0,0,0.55), inset 0 0.04em 0 rgba(255,255,255,0.12)",
+            }}
+          >
+            {/* 카트리지 고정 나사 2개 — 길이 방향으로 앞뒤 배치(실기 1/2인치 마운트 규격).
+                예전엔 폭 방향으로 흩어놔서 나사로 안 보였다. */}
+            <span
+              className="absolute left-1/2 -translate-x-1/2 rounded-full"
+              style={{
+                top: "20%",
+                width: "0.17em",
+                height: "0.17em",
+                backgroundColor: "#0d0e10",
+                boxShadow: "inset 0 0.02em 0.03em rgba(255,255,255,0.22)",
+              }}
+            />
+            <span
+              className="absolute left-1/2 -translate-x-1/2 rounded-full"
+              style={{
+                top: "52%",
+                width: "0.17em",
+                height: "0.17em",
+                backgroundColor: "#0d0e10",
+                boxShadow: "inset 0 0.02em 0.03em rgba(255,255,255,0.22)",
+              }}
+            />
+          </div>
+
+          {/* 노란 스타일러스 가드 — 헤드셸 **바로 아래**에 붙는다(옆이 아니라). */}
+          <div
+            className="absolute"
+            style={{
+              left: 0,
+              top: `${BENT_LEN + HS_LEN}em`,
+              width: `${HS_W * 0.66}em`,
+              height: `${GUARD_LEN}em`,
+              transform: "translateX(-50%)",
+              borderRadius: "0.04em 0.04em 0.06em 0.06em",
+              backgroundImage: "linear-gradient(to bottom, #dcc65a 0%, #c1a63a 60%, #9c7f22 100%)",
+              boxShadow: "0 0.04em 0.08em rgba(0,0,0,0.45)",
+            }}
+          />
+
+          {/* 핑거 리프트 — 헤드셸 옆구리에서 바깥으로 뻗은 밝은 은색 막대. */}
+          <div
             className="absolute rounded-full"
-            style={{ left: "56%", top: "46%", width: "0.2em", height: "0.2em", backgroundColor: "#191a1c" }}
+            style={{
+              left: `${HS_W * 0.42}em`,
+              top: `${BENT_LEN + HS_LEN * 0.62}em`,
+              width: "0.78em",
+              height: "0.13em",
+              backgroundImage: "linear-gradient(to bottom, #c2c3c9 0%, #8b8c92 55%, #5c5d62 100%)",
+              boxShadow: "0 0.03em 0.06em rgba(0,0,0,0.4)",
+            }}
           />
         </div>
-
-        {/* 핑거 리프트 — 헤드셸에서 오른쪽으로 뻗은 밝은 은색 막대(40px → 0.72em).
-            어두운 암에서 유일하게 밝은 금속이라 실루엣의 포인트가 된다. */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            bottom: `${-STYLUS_OVERHANG + 4}px`,
-            left: "calc(50% + 0.44em)",
-            width: "0.72em",
-            height: "0.14em",
-            transform: "rotate(16deg)",
-            backgroundImage: "linear-gradient(to bottom, #b6b7bd 0%, #85868c 60%, #5c5d62 100%)",
-          }}
-        />
-
-        {/* 스타일러스 가드 — 레퍼런스의 노란 플라스틱 조각. 채도를 낮춘 머스터드라
-            사이트 accent(초록)와 부딪히지 않는다. */}
-        <div
-          className="absolute rounded-[0.05em]"
-          style={{
-            bottom: `-${STYLUS_OVERHANG + 1}px`,
-            left: "calc(50% - 0.6em)",
-            width: "0.46em",
-            height: "0.22em",
-            transform: "rotate(16deg)",
-            backgroundImage: "linear-gradient(to bottom, #d8c256 0%, #b99e34 100%)",
-          }}
-        />
-
-        {/* 바늘 끝 — 판에 실제로 닿는 점. 위치는 STYLUS_OVERHANG과 정확히 같아야 한다
-            (armGeometry()의 len 계산이 이 값을 쓴다). */}
-        <div className="absolute -bottom-[13px] left-1/2 h-[4px] w-[2px] -translate-x-1/2 rounded-b-full bg-neutral-800 dark:bg-neutral-900" />
       </div>
 
       <style>{`
